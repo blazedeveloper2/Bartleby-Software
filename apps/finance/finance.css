@@ -37,10 +37,9 @@
 .fx-cat .fx-check{font-size:11px;margin-left:1px;opacity:.9}
 .fx-cat-new{color:var(--text-3);border-style:dashed;cursor:pointer}
 .fx-cat-new:hover{color:var(--green);border-color:#22c55e50}
-.fx-cat.manage{cursor:default;color:var(--text-2);padding-right:6px}
-.fx-cat.manage:hover{border-color:var(--border)}
-.fx-cat-x{background:none;border:none;color:var(--text-3);font-size:16px;line-height:1;cursor:pointer;padding:0 2px;margin-left:2px;border-radius:50%;transition:color .12s}
-.fx-cat-x:hover{color:var(--red)}
+.fx-cat.manage{cursor:pointer;color:var(--text-2)}
+.fx-cat.manage:hover{border-color:var(--border-lt);color:var(--text)}
+.fx-manage-hint{font-size:11.5px;color:var(--text-3);margin:-8px 0 16px;line-height:1.4}
 
 .fx-newcat{background:var(--bg);border:1px solid var(--border-lt);border-radius:var(--rs);padding:12px;margin-bottom:16px}
 .fx-newcat-in{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;color:var(--text);font-family:var(--font);font-size:13px;font-weight:500;outline:none;margin-bottom:10px}

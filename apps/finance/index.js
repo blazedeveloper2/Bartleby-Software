@@ -20,7 +20,7 @@ const catsSave = l => save('fin_cats', l);
 let root = null;
 let activeTab = 'add';
 let editId = null, viewId = null;
-let addingCat = false, managingCats = false;
+let addingCat = false, managingCats = false, editCat = null;
 let selCat = null, newCatColor = PALETTE[0];
 let draft = { amt: '', date: '', note: '' };
 let calOpen = false, calView = '';
@@ -113,7 +113,9 @@ function renderAdd() {
 
   const chips = cats.map(c => {
     if (managingCats) {
-      return `<span class="fx-cat manage"><span class="fx-dot" style="background:${c.color}"></span>${esc(c.name)}<button class="fx-cat-x" data-act="del-cat" data-cat="${esc(c.name)}" title="Delete">&times;</button></span>`;
+      const ed = c.name === editCat;
+      const st = ed ? `border-color:${c.color};box-shadow:0 0 0 1px ${c.color}` : '';
+      return `<button class="fx-cat manage ${ed ? 'sel' : ''}" data-act="edit-cat" data-cat="${esc(c.name)}" style="${st}"><span class="fx-dot" style="background:${c.color}"></span>${esc(c.name)}</button>`;
     }
     const on = c.name === selCat;
     const style = on ? `background:${c.color}26;border-color:${c.color};box-shadow:0 0 0 1px ${c.color}` : '';
@@ -135,6 +137,19 @@ function renderAdd() {
       <div class="fx-newcat-btns"><button class="fx-btn pri" data-act="new-cat-save">Add Category</button><button class="fx-btn gho" data-act="new-cat-cancel">Cancel</button></div>
     </div>` : '';
 
+  const editCatBlock = (managingCats && editCat && cats.some(c => c.name === editCat)) ? `
+    <div class="fx-newcat">
+      <input class="fx-newcat-in" id="fx-editcat-in" value="${esc(editCat)}" maxlength="24" autocomplete="off">
+      <div class="fx-sw-lbl">Color <span class="fx-opt">— tap the wheel for any color</span></div>
+      <div class="fx-sw-row">
+        ${PALETTE.map(c => `<button class="fx-sw ${c.toLowerCase() === newCatColor.toLowerCase() ? 'sel' : ''}" data-act="new-cat-color" data-c="${c}" style="background:${c}"></button>`).join('')}
+        <span class="fx-color-wrap"><input type="color" class="fx-color" id="fx-color" value="${newCatColor}" title="Pick any color"></span>
+      </div>
+      <div class="fx-newcat-btns"><button class="fx-btn pri" data-act="editcat-save">Save</button><button class="fx-btn danger" data-act="editcat-del">Delete</button><button class="fx-btn gho" data-act="editcat-cancel">Cancel</button></div>
+    </div>` : '';
+
+  const manageHint = (managingCats && !editCat) ? '<div class="fx-manage-hint">Tap a category to rename, recolor, or delete it.</div>' : '';
+
   const today = all.filter(t => t.d === todayStr());
   const month = all.filter(t => t.d.startsWith(curMonth()));
 
@@ -145,7 +160,7 @@ function renderAdd() {
 
       <div class="fx-lbl fx-lbl-row"><span>Category</span><button class="fx-manage" data-act="cat-manage">${managingCats ? 'Done' : 'Manage'}</button></div>
       <div class="fx-cats">${chips}${catExtra}</div>
-      ${newCatBlock}
+      ${manageHint}${newCatBlock}${editCatBlock}
 
       <div class="fx-field fx-field-b"><div class="fx-lbl">Date</div><button class="fx-datebtn ${calOpen ? 'open' : ''}" data-act="cal-toggle"><span>${fmtDateBtn(date)}</span>${CAL_SVG}</button></div>
       ${calOpen ? calGrid(calView) : ''}
@@ -163,6 +178,18 @@ function renderAdd() {
       <div class="fx-stat accent"><div class="fx-stat-v">${fmtMoneyC(sum(month))}</div><div class="fx-stat-l">This Month</div></div>
       <div class="fx-stat"><div class="fx-stat-v">${month.length}</div><div class="fx-stat-l">Entries</div></div>
     </div>`;
+
+    // Today's expenses
+    const todayList = today.slice().reverse();
+    h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge" style="background:var(--green)">Today</span><span class="day-title">${todayList.length} ${todayList.length===1?'Expense':'Expenses'}</span></div>${todayList.length?`<span class="day-prog">${fmtMoneyC(sum(todayList))}</span>`:''}</div>`;
+    h += todayList.length ? `<div class="tx-list">${todayList.map(txRow).join('')}</div>` : `<div class="fx-empty" style="padding:26px 16px">Nothing logged today yet.</div>`;
+    h += `</div>`;
+
+    // Brief history (recent expenses before today)
+    const recent = [...all].filter(t => t.d !== todayStr()).sort((a, b) => b.d.localeCompare(a.d)).slice(0, 5);
+    if (recent.length) {
+      h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge" style="background:var(--purple)">Recent</span><span class="day-title">Last ${recent.length}</span></div><span class="day-prog" data-act="tab" data-tab="history" style="cursor:pointer">All →</span></div><div class="tx-list">${recent.map(txRow).join('')}</div></div>`;
+    }
   }
 
   q('#fp-add').innerHTML = h;
@@ -190,7 +217,7 @@ function pickCat(name) {
     if (!on && chk) chk.remove();
   });
 }
-function openNewCat() { managingCats = false; addingCat = true; reRender(); setTimeout(() => q('#fx-newcat-in')?.focus(), 40); }
+function openNewCat() { managingCats = false; editCat = null; addingCat = true; reRender(); setTimeout(() => q('#fx-newcat-in')?.focus(), 40); }
 function cancelNewCat() { addingCat = false; reRender(); }
 function updateNewColor(val) {
   newCatColor = val;
@@ -209,13 +236,37 @@ function saveNewCat() {
   reRender();
   toast(`Added “${name}”`);
 }
-function delCat(name) {
+function openEditCat(name) {
+  const c = getCats().find(x => x.name === name); if (!c) return;
+  editCat = name; addingCat = false; newCatColor = c.color;
+  reRender();
+  setTimeout(() => { const el = q('#fx-editcat-in'); if (el) { el.focus(); el.select?.(); } }, 40);
+}
+function saveEditCat() {
+  const oldName = editCat; if (!oldName) return;
+  const newName = (q('#fx-editcat-in')?.value || '').trim();
+  if (!newName) { toast('Name cannot be empty'); return; }
+  const cats = getCats();
+  if (newName.toLowerCase() !== oldName.toLowerCase() && cats.some(c => c.name.toLowerCase() === newName.toLowerCase())) { toast('That name already exists'); return; }
+  catsSave(cats.map(c => c.name === oldName ? { name: newName, color: newCatColor } : c));
+  if (newName !== oldName) {
+    txSave(txAll().map(t => t.cat === oldName ? { ...t, cat: newName } : t));  // migrate existing expenses
+    if (selCat === oldName) selCat = newName;
+    if (histCat === oldName) histCat = newName;
+  }
+  editCat = null;
+  renderAll();
+  toast('Category updated');
+}
+function editCatDelete() {
+  const name = editCat; if (!name) return;
   const used = txAll().filter(t => t.cat === name).length;
   const msg = used ? `Delete “${name}”?\n\n${used} expense${used>1?'s':''} use it — those entries keep the label but lose the color.` : `Delete “${name}”?`;
   if (!confirm(msg)) return;
   catsSave(getCats().filter(c => c.name !== name));
   if (selCat === name) selCat = null;
-  reRender();
+  editCat = null;
+  renderAll();
   toast(`Deleted “${name}”`);
 }
 
@@ -441,8 +492,11 @@ function onClick(e) {
   switch (a.act) {
     case 'tab':           switchTab(a.tab); break;
     case 'pick-cat':      pickCat(a.cat); break;
-    case 'cat-manage':    managingCats = !managingCats; addingCat = false; reRender(); break;
-    case 'del-cat':       delCat(a.cat); break;
+    case 'cat-manage':    managingCats = !managingCats; addingCat = false; editCat = null; reRender(); break;
+    case 'edit-cat':      openEditCat(a.cat); break;
+    case 'editcat-save':  saveEditCat(); break;
+    case 'editcat-del':   editCatDelete(); break;
+    case 'editcat-cancel':editCat = null; reRender(); break;
     case 'new-cat-open':  openNewCat(); break;
     case 'new-cat-color': updateNewColor(a.c); break;
     case 'new-cat-save':  saveNewCat(); break;
@@ -483,6 +537,7 @@ function onKeydown(e) {
   if (e.key !== 'Enter') return;
   if (e.target.id === 'fx-amount') { e.preventDefault(); saveTx(); }
   else if (e.target.id === 'fx-newcat-in') { e.preventDefault(); saveNewCat(); }
+  else if (e.target.id === 'fx-editcat-in') { e.preventDefault(); saveEditCat(); }
   // #fx-note is a textarea — let Enter add a new line
 }
 function onInput(e) {
@@ -517,7 +572,7 @@ export default {
   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
   mount(el) {
     root = el;
-    activeTab = 'add'; editId = null; viewId = null; addingCat = false; managingCats = false;
+    activeTab = 'add'; editId = null; viewId = null; addingCat = false; managingCats = false; editCat = null;
     selCat = null; newCatColor = PALETTE[0]; calOpen = false; calView = curMonth();
     draft = { amt: '', date: todayStr(), note: '' };
     histMonth = 'all'; histCat = 'all';
