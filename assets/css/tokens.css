@@ -1,0 +1,53 @@
+/* ═══════════════════════════════════════════════════════════
+   BARTLEBY SOFTWARE — DESIGN SYSTEM
+   Shared tokens, reset, and base primitives used by every app.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Surfaces */
+  --bg:#08090d;--bg-card:#10121a;--bg-alt:#141722;--bg-hover:#1a1d2a;
+  --bg-input:#0c0e14;--border:#1c2030;--border-lt:#252a3a;
+
+  /* Text */
+  --text:#e2e6f0;--text-2:#8b92a8;--text-3:#4a5068;
+
+  /* Accents */
+  --blue:#3b82f6;--blue-d:#3b82f620;--purple:#8b5cf6;
+  --amber:#f59e0b;--red:#ef4444;--red-d:#ef444420;
+  --green:#22c55e;--green-d:#22c55e20;--pink:#f472b6;
+
+  /* Radii */
+  --r:10px;--rs:6px;
+
+  /* Type */
+  --font:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--font);
+  min-height:100dvh;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+
+/* ═══ SHARED: TOAST ═══ */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:var(--bg-alt);border:1px solid var(--border-lt);
+  padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:500;
+  opacity:0;transition:all .3s cubic-bezier(.22,.68,0,1.1);
+  pointer-events:none;z-index:400;box-shadow:0 8px 40px #0006;
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══ SHARED: DAY / SECTION CARD ═══ */
+.day-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--r);margin-bottom:16px;overflow:hidden;
+}
+.day-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+.day-top-l{display:flex;align-items:center;gap:10px}
+.day-badge{padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff}
+.day-title{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-2)}

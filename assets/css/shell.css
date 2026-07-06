@@ -1,0 +1,64 @@
+/* ═══════════════════════════════════════════════════════════
+   SHELL — brand sidebar + app switcher + content frame
+   ═══════════════════════════════════════════════════════════ */
+
+:root{--shell-bar-h:0px}
+
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100dvh}
+
+/* ── Sidebar (desktop) ── */
+.sidebar{
+  position:sticky;top:0;align-self:start;height:100dvh;
+  background:var(--bg-card);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:22px 14px;gap:6px;
+}
+.brand{padding:6px 10px 20px}
+.brand h1{font-size:15px;font-weight:700;letter-spacing:5px;text-transform:uppercase;line-height:1.2}
+.brand p{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--text-3);margin-top:4px}
+
+.side-lbl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);padding:4px 10px 8px}
+
+.app-btn{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:11px 12px;border-radius:var(--rs);border:1px solid transparent;
+  background:none;color:var(--text-2);font-family:var(--font);
+  font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s;text-align:left;
+}
+.app-btn:hover{background:var(--bg-hover);color:var(--text)}
+.app-btn.active{background:var(--blue-d);border-color:#3b82f640;color:var(--text)}
+.app-btn .app-ico{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text-3);transition:color .15s}
+.app-btn.active .app-ico,.app-btn:hover .app-ico{color:var(--blue)}
+.app-btn .app-ico svg{width:18px;height:18px}
+.app-btn .app-soon{margin-left:auto;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);border:1px solid var(--border);border-radius:20px;padding:2px 7px}
+
+.side-foot{margin-top:auto;padding:10px;font-size:10px;color:var(--text-3);letter-spacing:.5px}
+
+/* ── Content frame ── */
+.content{min-width:0;position:relative}
+#app-root{min-height:100dvh}
+
+/* Per-app inner container keeps the mobile-first 640px column feel */
+.app-wrap{max-width:640px;margin:0 auto;padding:20px 16px 100px}
+
+/* Generic in-app header used by apps that want a title strip */
+.app-head{padding:34px 24px 18px;text-align:center}
+.app-head h1{font-size:18px;font-weight:700;letter-spacing:8px;text-transform:uppercase;margin-bottom:4px}
+.app-head p{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-3)}
+
+/* ── Mobile: sidebar collapses to a top app bar ── */
+@media(max-width:820px){
+  :root{--shell-bar-h:58px}
+  .shell{grid-template-columns:1fr}
+  .sidebar{
+    position:sticky;top:0;height:auto;flex-direction:row;align-items:center;
+    padding:10px 12px;gap:8px;border-right:none;border-bottom:1px solid var(--border);
+    z-index:60;overflow-x:auto;scrollbar-width:none;
+  }
+  .sidebar::-webkit-scrollbar{display:none}
+  .brand{padding:0 12px 0 4px;flex-shrink:0}
+  .brand h1{font-size:13px;letter-spacing:3px}
+  .brand p{display:none}
+  .side-lbl,.side-foot{display:none}
+  .app-btn{width:auto;flex-shrink:0;padding:9px 14px}
+  .app-btn .app-soon{display:none}
+}
