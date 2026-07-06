@@ -13,7 +13,7 @@ import { toast } from '../../assets/js/ui.js';
 /* ── storage ── */
 const txAll    = () => load('fin_tx', []);
 const txSave   = l => save('fin_tx', l);
-const getCats  = () => load('fin_cats', DEFAULT_CATS);
+const getCats  = () => [...load('fin_cats', DEFAULT_CATS)].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 const catsSave = l => save('fin_cats', l);
 
 /* ── state ── */
