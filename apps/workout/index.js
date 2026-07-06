@@ -1,8 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    WORKOUT APP
-   Program tracker · exercise-weight log · bodyweight trend.
-   Ported to the Bartleby shell: self-contained mount/unmount,
-   event-delegated (no inline handlers), namespaced storage.
+   Program tracker (tap an exercise → muscle map + set its weight)
+   and a bodyweight trend tab. Local-first, event-delegated.
    ═══════════════════════════════════════════════════════════ */
 
 import { PROGRAM, MMAP } from './data.js';
@@ -24,10 +23,7 @@ let root = null;
 let activeTab = 'program';
 let bwRange = '30';
 let bwEditDate = null;
-
-/* rest-timer state */
-let tSec = 120, tLeft = 120, tInt = null, tRun = false;
-const CIRC = 2 * Math.PI * 90;
+let mmEx = null;             // exercise currently open in the muscle modal
 
 const BW_RANGES = [
   {k:'7',  d:7,   lbl:'7D'},
@@ -66,7 +62,7 @@ function renderProg() {
 function toggleChk(k) { const c = chks(); c[k] = !c[k]; sChk(c); renderProg(); }
 function clearChk() { sChk({}); renderProg(); toast('Checkmarks cleared'); }
 
-/* ═══════════════════ MUSCLE MODAL ═══════════════════ */
+/* ═══════════════════ MUSCLE MODAL (+ weight editor) ═══════════════════ */
 function parseMuscles(mStr) {
   const raw = mStr.toLowerCase().replace(/\(.*?\)/g,'').split(',').map(s=>s.trim()).filter(Boolean);
   const ids = new Set();
@@ -80,12 +76,14 @@ function parseMuscles(mStr) {
 }
 
 function openMM(ex) {
+  mmEx = ex;
   q('#mm-name').textContent = ex.n;
-  const w = wts()[ex.n];
   let info = `<span class="mm-tag">${ex.s}</span>`;
   if (ex.b) info += `<span class="mm-tag">${ex.b}</span>`;
-  if (w) info += `<span class="mm-tag" style="color:var(--green);border-color:var(--green-d)">${w} lbs</span>`;
   q('#mm-info').innerHTML = info;
+
+  const wt = wts()[ex.n];
+  q('#mm-wt').value = wt || '';
 
   const muscles = ex.m.replace(/\(.*?\)/g,'').split(',').map(s=>s.trim()).filter(Boolean);
   q('#mm-mlist').innerHTML = muscles.map(m => `<span class="mm-muscle-chip">${m}</span>`).join('');
@@ -95,54 +93,15 @@ function openMM(ex) {
 
   q('#mm-ol').classList.add('on');
 }
-function closeMM() { q('#mm-ol').classList.remove('on'); }
+function closeMM() { q('#mm-ol').classList.remove('on'); mmEx = null; }
 
-/* ═══════════════════ EXERCISE-WEIGHT LOG ═══════════════════ */
-function renderWts() {
-  const p = q('#p-weights'), w = wts(), gr = {};
-  PROGRAM.forEach(day => day.sections.forEach(sec => sec.ex.forEach(ex => {
-    if (!gr[day.day]) gr[day.day] = { label: day.label, list: [] };
-    if (!gr[day.day].list.find(e => e.n === ex.n)) gr[day.day].list.push(ex);
-  })));
-  let h = '';
-  for (const [day, data] of Object.entries(gr)) {
-    h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge ${day}">${day}</span><span class="day-title">${data.label}</span></div></div><div class="wt-grid">`;
-    data.list.forEach(ex => {
-      h += `<div class="wt-row"><div class="ex-body"><div class="ex-name">${ex.n}</div></div><div class="wt-wrap"><input class="wt-in" type="number" step="2.5" min="0" placeholder="—" value="${w[ex.n]||''}" data-n="${ex.n}"><span class="wt-u">lbs</span></div></div>`;
-    });
-    h += `</div></div>`;
-  }
-  p.innerHTML = h;
-}
-
-function setW(el) {
+function setMMWeight(el) {
+  if (!mmEx) return;
   const w = wts(), v = parseFloat(el.value);
-  if (isNaN(v) || v <= 0) delete w[el.dataset.n]; else w[el.dataset.n] = v;
+  if (isNaN(v) || v <= 0) delete w[mmEx.n]; else w[mmEx.n] = v;
   sWt(w); renderProg();
-  toast(`${el.dataset.n}: ${v || '—'} lbs`);
+  toast(`${mmEx.n}: ${v > 0 ? v + ' lbs' : 'cleared'}`);
 }
-
-/* ═══════════════════ REST TIMER ═══════════════════ */
-function openTimer() { q('#timer-ol').classList.add('on'); resetTD(); }
-function closeTimer() { q('#timer-ol').classList.remove('on'); stopT(); }
-function setPre(s) { tSec = s; root.querySelectorAll('.t-pre').forEach(b => b.classList.toggle('sel', +b.dataset.s === s)); stopT(); resetTD(); }
-function resetTD() { tLeft = tSec; updTUI(); q('#t-fg').style.strokeDashoffset = '0'; q('#t-go').textContent = 'Start'; q('#t-lbl').textContent = 'Rest'; }
-function toggleTimer() {
-  if (tRun) { stopT(); return; }
-  tRun = true; q('#t-go').textContent = 'Stop'; q('#t-lbl').textContent = 'Resting';
-  tInt = setInterval(() => {
-    tLeft--;
-    if (tLeft <= 0) {
-      tLeft = 0; stopT();
-      q('#t-lbl').textContent = 'Done!'; q('#t-go').textContent = 'Restart';
-      try { navigator.vibrate?.(300); } catch {}
-    }
-    updTUI();
-    q('#t-fg').style.strokeDashoffset = ((1 - tLeft/tSec) * CIRC).toFixed(2);
-  }, 1000);
-}
-function stopT() { clearInterval(tInt); tRun = false; if (tLeft > 0) { q('#t-go').textContent = 'Start'; q('#t-lbl').textContent = 'Paused'; } }
-function updTUI() { const m = Math.floor(tLeft/60), s = tLeft % 60; q('#t-txt').textContent = `${m}:${String(s).padStart(2,'0')}`; }
 
 /* ═══════════════════ BODYWEIGHT ═══════════════════ */
 function bwSort(l) { return [...l].sort((a,b) => a.d.localeCompare(b.d)); }
@@ -315,10 +274,6 @@ function onClick(e) {
     case 'chk':       toggleChk(a.k); break;
     case 'clear':     clearChk(); break;
     case 'mm-close':  closeMM(); break;
-    case 'timer-open':   openTimer(); break;
-    case 'timer-close':  closeTimer(); break;
-    case 'timer-pre':    setPre(+a.s); break;
-    case 'timer-toggle': toggleTimer(); break;
     case 'bw-range':  bwSetRange(a.k); break;
     case 'bw-save':   bwSave(); break;
     case 'bw-edit':   bwEdit(a.d); break;
@@ -326,8 +281,12 @@ function onClick(e) {
     case 'bw-cancel': bwCancelEdit(); break;
   }
 }
-function onChange(e) { if (e.target.classList.contains('wt-in')) setW(e.target); }
-function onKeydown(e) { if (e.target.id === 'bw-weight' && e.key === 'Enter') bwSave(); }
+function onChange(e) { if (e.target.id === 'mm-wt') setMMWeight(e.target); }
+function onKeydown(e) {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'bw-weight') bwSave();
+  else if (e.target.id === 'mm-wt') e.target.blur();
+}
 
 /* ═══════════════════ STATIC MARKUP ═══════════════════ */
 const MUSCLE_SVG = `<svg viewBox="0 0 320 290" xmlns="http://www.w3.org/2000/svg">
@@ -371,12 +330,10 @@ function template() {
     <div class="app-head"><h1>Build Program</h1><p>Dumbbells + Bench · 4 Day Upper/Lower · Weight</p></div>
     <nav class="nav"><div class="nav-inner">
       <button class="tab active" data-act="tab" data-tab="program">Program</button>
-      <button class="tab" data-act="tab" data-tab="weights">Exercise Log</button>
       <button class="tab" data-act="tab" data-tab="bw">Weight</button>
     </div></nav>
     <div class="app-wrap">
       <div class="panel active" id="p-program"></div>
-      <div class="panel" id="p-weights"></div>
       <div class="panel" id="p-bw"></div>
     </div>
 
@@ -384,29 +341,12 @@ function template() {
       <div class="mm-card">
         <div class="mm-head"><div class="mm-title" id="mm-name"></div><button class="mm-close" data-act="mm-close">&times;</button></div>
         <div class="mm-info" id="mm-info"></div>
+        <div class="mm-wt-row">
+          <span class="mm-wt-lbl">Working Weight</span>
+          <div class="mm-wt-box"><input class="mm-wt-in" id="mm-wt" type="number" step="2.5" min="0" inputmode="decimal" placeholder="—"><span class="mm-wt-u">lbs</span></div>
+        </div>
         <div class="mm-map">${MUSCLE_SVG}</div>
         <div class="mm-muscles"><div class="mm-muscles-title">Target Muscles</div><div class="mm-muscle-list" id="mm-mlist"></div></div>
-      </div>
-    </div>
-
-    <button class="timer-fab" data-act="timer-open" title="Rest Timer">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L1 6"/><path d="M19 3l4 3"/><path d="M12 2v3"/></svg>
-    </button>
-
-    <div class="timer-ol" id="timer-ol">
-      <div class="timer-pre">
-        <button class="t-pre" data-act="timer-pre" data-s="60">1:00</button>
-        <button class="t-pre sel" data-act="timer-pre" data-s="120">2:00</button>
-        <button class="t-pre" data-act="timer-pre" data-s="150">2:30</button>
-        <button class="t-pre" data-act="timer-pre" data-s="180">3:00</button>
-      </div>
-      <div class="timer-ring">
-        <svg viewBox="0 0 200 200"><circle class="tr-bg" cx="100" cy="100" r="90"/><circle class="tr-fg" id="t-fg" cx="100" cy="100" r="90" stroke-dasharray="565.49" stroke-dashoffset="0"/></svg>
-        <div class="timer-mid"><div class="timer-time" id="t-txt">2:00</div><div class="timer-lbl" id="t-lbl">Rest</div></div>
-      </div>
-      <div class="timer-btns">
-        <button class="t-btn gho" data-act="timer-close">Close</button>
-        <button class="t-btn pri" id="t-go" data-act="timer-toggle">Start</button>
       </div>
     </div>
   </div>`;
@@ -420,15 +360,15 @@ export default {
   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"/><path d="M4 8.5L2.5 10 4 11.5"/><path d="M8.5 4L10 2.5 11.5 4"/><path d="M20 8.5L21.5 10 20 11.5"/><path d="M15.5 20L14 21.5 12.5 20"/><rect x="4" y="7" width="4" height="10" rx="1"/><rect x="16" y="7" width="4" height="10" rx="1"/></svg>',
   mount(el) {
     root = el;
+    activeTab = 'program'; bwRange = '30'; bwEditDate = null; mmEx = null;
     root.innerHTML = template();
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
     root.addEventListener('keydown', onKeydown);
-    renderProg(); renderWts(); renderBW();
+    renderProg(); renderBW();
     switchTab(activeTab);
   },
   unmount() {
-    stopT();
     if (root) {
       root.removeEventListener('click', onClick);
       root.removeEventListener('change', onChange);

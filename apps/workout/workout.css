@@ -66,38 +66,14 @@
 .m-region.lit{fill:#3b82f6}
 .m-label{fill:var(--text-3);font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--font)}
 
-/* ── Rest timer ── */
-.timer-ol{position:fixed;inset:0;background:#08090dee;backdrop-filter:blur(20px);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;opacity:0;pointer-events:none;transition:opacity .25s}
-.timer-ol.on{opacity:1;pointer-events:all}
-.timer-ring{position:relative;width:200px;height:200px}
-.timer-ring svg{width:200px;height:200px;transform:rotate(-90deg)}
-.tr-bg{fill:none;stroke:var(--border);stroke-width:4}
-.tr-fg{fill:none;stroke:var(--blue);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .3s linear}
-.timer-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.timer-time{font-family:var(--mono);font-size:48px;font-weight:700;line-height:1}
-.timer-lbl{font-size:12px;color:var(--text-3);margin-top:6px;letter-spacing:1px;text-transform:uppercase}
-.timer-btns{display:flex;gap:10px}
-.t-btn{padding:12px 28px;border-radius:var(--r);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
-.t-btn.pri{background:var(--blue);color:#fff}.t-btn.pri:hover{background:#2563eb}
-.t-btn.gho{background:var(--bg-card);border:1px solid var(--border);color:var(--text-2)}.t-btn.gho:hover{color:var(--text)}
-.timer-pre{display:flex;gap:8px}
-.t-pre{padding:6px 14px;border-radius:20px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-2);font-family:var(--mono);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
-.t-pre:hover,.t-pre.sel{border-color:var(--blue);color:var(--blue)}
-.timer-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--blue);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px #3b82f650;transition:all .2s;z-index:100}
-.timer-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px #3b82f670}
-.timer-fab:active{transform:scale(.96)}
-.timer-fab svg{width:22px;height:22px}
-
-/* ── Exercise-weight log tab ── */
-.wt-grid{padding:2px 0}
-.wt-row{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;transition:background .12s}
-.wt-row:hover{background:var(--bg-hover)}
-.wt-row .ex-name{font-size:13px}
-.wt-wrap{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:5px 10px;transition:border-color .2s}
-.wt-wrap:focus-within{border-color:var(--blue)}
-.wt-in{width:50px;background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:14px;font-weight:600;text-align:right;outline:none}
-.wt-in::placeholder{color:var(--text-3)}
-.wt-u{font-size:11px;color:var(--text-3);font-weight:500}
+/* ── Working-weight editor inside the muscle modal ── */
+.mm-wt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)}
+.mm-wt-lbl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
+.mm-wt-box{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;transition:border-color .15s}
+.mm-wt-box:focus-within{border-color:var(--green)}
+.mm-wt-in{width:64px;background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:18px;font-weight:700;text-align:right;outline:none;-webkit-appearance:none}
+.mm-wt-in::placeholder{color:var(--text-3)}
+.mm-wt-u{font-size:12px;color:var(--text-3);font-weight:600}
 
 /* ── Bodyweight tab ── */
 .bw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
@@ -153,7 +129,6 @@
 @media(max-width:480px){
   .wk .app-wrap{padding:16px 12px 100px}
   .wk .ex-musc{max-width:130px}
-  .timer-fab{bottom:20px;right:16px;width:48px;height:48px}
   .mm-card{max-height:95vh;border-radius:10px}
   .bw-stats{grid-template-columns:repeat(2,1fr)}
   .bw-add{grid-template-columns:1fr 1fr}

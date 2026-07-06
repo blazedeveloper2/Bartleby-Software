@@ -5,11 +5,16 @@ module; a lightweight shell switches between them from the sidebar.
 
 Live apps:
 
-- **Workout** — 4-day upper/lower program tracker, per-exercise weight log,
-  bodyweight trend chart, rest timer, and a muscle-map modal.
-- **Finance** — scaffolded, ready to build out next.
+- **Workout** — 4-day upper/lower program tracker with a muscle-map modal
+  (tap an exercise to set its working weight) and a bodyweight trend chart.
+- **Finance** — expense tracker: log spending by category (add/delete your own
+  categories) with a calendar date picker and notes, a filterable history with
+  tap-to-view details, and Insights (category donut + jump-to-any month/year +
+  12-month trend).
 
-All data is stored locally in your browser (`localStorage`). Nothing is sent anywhere.
+All data is stored locally in your browser (`localStorage`). Nothing is sent
+anywhere. Use **Settings → Export Backup** to save a `.json` file before
+switching devices, and **Import Backup** to restore it.
 
 ---
 
