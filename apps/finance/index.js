@@ -184,12 +184,6 @@ function renderAdd() {
     h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge" style="background:var(--green)">Today</span><span class="day-title">${todayList.length} ${todayList.length===1?'Expense':'Expenses'}</span></div>${todayList.length?`<span class="day-prog">${fmtMoneyC(sum(todayList))}</span>`:''}</div>`;
     h += todayList.length ? `<div class="tx-list">${todayList.map(txRow).join('')}</div>` : `<div class="fx-empty" style="padding:26px 16px">Nothing logged today yet.</div>`;
     h += `</div>`;
-
-    // Brief history (recent expenses before today)
-    const recent = [...all].filter(t => t.d !== todayStr()).sort((a, b) => b.d.localeCompare(a.d)).slice(0, 5);
-    if (recent.length) {
-      h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge" style="background:var(--purple)">Recent</span><span class="day-title">Last ${recent.length}</span></div><span class="day-prog" data-act="tab" data-tab="history" style="cursor:pointer">All →</span></div><div class="tx-list">${recent.map(txRow).join('')}</div></div>`;
-    }
   }
 
   q('#fp-add').innerHTML = h;
