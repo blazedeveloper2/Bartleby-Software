@@ -36,7 +36,7 @@ const curYear  = () => todayStr().slice(0, 4);
 const uid = () => (crypto?.randomUUID?.() || (Date.now() + '-' + Math.random().toString(16).slice(2)));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtMoney  = n => '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtMoneyC = n => '$' + Math.round(n || 0).toLocaleString('en-US');
+const fmtMoneyC = n => '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const catColor = name => (getCats().find(c => c.name === name) || {}).color || '#8b92a8';
 
 function fmtDateShort(d) {
