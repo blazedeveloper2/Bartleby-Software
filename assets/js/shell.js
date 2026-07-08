@@ -173,6 +173,9 @@ document.getElementById('settings-btn')?.addEventListener('click', openSettings)
 
 /* ── boot ── */
 renderNav();
+// Preload every app's stylesheet up front so switching tabs never flashes
+// unstyled markup (the CSS is already applied before mount() injects HTML).
+APPS.forEach(app => loadStyles(app.styles));
 switchTo(loadActive());
 
 window.addEventListener('hashchange', () => {
