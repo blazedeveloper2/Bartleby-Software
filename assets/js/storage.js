@@ -12,4 +12,8 @@ export function save(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-export const todayStr = () => new Date().toISOString().slice(0, 10);
+// Local-date YYYY-MM-DD (NOT toISOString, which returns UTC and rolls a day
+// ahead of local time in western timezones after ~4-5pm).
+export const dateStr = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const todayStr = () => dateStr();

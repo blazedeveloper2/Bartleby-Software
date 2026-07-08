@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 import { PROGRAM, MMAP } from './data.js';
-import { load, save, todayStr } from '../../assets/js/storage.js';
+import { load, save, todayStr, dateStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
 
 /* ── namespaced storage ── */
@@ -122,7 +122,7 @@ function bwFilteredForChart() {
   const l = bwAll(), r = BW_RANGES.find(x => x.k === bwRange);
   if (!r || r.d === null) return l;
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - r.d);
-  const cs = cutoff.toISOString().slice(0,10);
+  const cs = dateStr(cutoff);
   return l.filter(e => e.d >= cs);
 }
 function bwStats() {
@@ -131,7 +131,7 @@ function bwStats() {
   const total = cur - all[0].w;
   function deltaWindow(days) {
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
-    const cs = cutoff.toISOString().slice(0,10);
+    const cs = dateStr(cutoff);
     const recent = all.filter(e => e.d >= cs);
     if (recent.length < 2) return null;
     return recent[recent.length-1].w - recent[0].w;
