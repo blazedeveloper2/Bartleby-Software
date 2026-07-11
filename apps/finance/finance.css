@@ -179,6 +179,7 @@
 .fx-ov-row:last-child{border-bottom:none}
 .fx-ov-row span{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);flex-shrink:0}
 .fx-ov-row b{font-size:13.5px;font-weight:600;color:var(--text);text-align:right}
+.fx-ov-note{white-space:pre-line;overflow-wrap:anywhere}
 .fx-ov-actions{display:flex;gap:8px;padding:14px 20px 20px}
 
 @media(max-width:480px){

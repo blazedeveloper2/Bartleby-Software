@@ -65,7 +65,7 @@ const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 /* ═══════════════════ tx row (note primary, category secondary) ═══════════════════ */
 function txRow(t) {
   const color = catColor(t.cat);
-  const primary = t.note ? esc(t.note) : esc(t.cat);
+  const primary = t.note ? esc(t.note.split('\n')[0]) : esc(t.cat);
   const secondary = t.note ? `<div class="tx-sub">${esc(t.cat)}</div>` : '';
   return `<div class="tx-row" data-act="view-tx" data-id="${t.id}">
     <span class="tx-dot" style="background:${color}"></span>
@@ -316,7 +316,7 @@ function viewTx(id) {
     <div class="fx-ov-cat"><span class="tx-dot" style="background:${color}"></span>${esc(t.cat)}</div>
     <div class="fx-ov-rows">
       <div class="fx-ov-row"><span>Date</span><b>${fmtDateLong(t.d)}</b></div>
-      <div class="fx-ov-row"><span>Note</span><b>${t.note ? esc(t.note) : '—'}</b></div>
+      <div class="fx-ov-row"><span>Note</span><b class="fx-ov-note">${t.note ? esc(t.note) : '—'}</b></div>
     </div>
     <div class="fx-ov-actions">
       <button class="fx-btn gho" data-act="modal-edit" data-id="${t.id}">Edit</button>
