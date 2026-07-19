@@ -18,6 +18,12 @@ const ek   = (d, s, e) => `${d}.${s}.${e}`;
 const bwAll = () => load('bp_bw', []);
 const bwSv  = l => save('bp_bw', l);
 
+/* Pull-up bar equipment flag. When off, exercises with an `alt`
+   render (and track weight) as their no-bar version. */
+const barOn = () => load('bp_bar', true);
+const sBar  = v => save('bp_bar', v);
+const resEx = ex => (!barOn() && ex.alt) ? ex.alt : ex;
+
 /* ── module state ── */
 let root = null;
 let activeTab = 'program';
@@ -37,7 +43,8 @@ const q = sel => root.querySelector(sel);
 /* ═══════════════════ PROGRAM TAB ═══════════════════ */
 function renderProg() {
   const p = q('#p-program'), ch = chks(), w = wts();
-  let h = '';
+  const bar = barOn();
+  let h = `<div class="eq-bar"><div class="eq-l"><div class="eq-title">Pull-Up Bar</div><div class="eq-sub">${bar ? 'Pull-Ups & Hanging Knee Raises need one.' : 'Swapped to dumbbell & bench alternatives.'}</div></div><div class="eq-seg"><button class="eq-btn ${bar?'sel':''}" data-act="bar" data-v="1">Have One</button><button class="eq-btn ${!bar?'sel':''}" data-act="bar" data-v="0">No Bar</button></div></div>`;
   PROGRAM.forEach((day, di) => {
     let tot = 0, dn = 0;
     day.sections.forEach((sec, si) => sec.ex.forEach((_, ei) => { tot++; if (ch[ek(di,si,ei)]) dn++; }));
@@ -45,7 +52,8 @@ function renderProg() {
     h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge ${day.day}">${day.day}</span><span class="day-title">${day.label}</span></div><span class="day-prog ${comp?'done':''}">${dn}/${tot}</span></div><div class="day-body">`;
     day.sections.forEach((sec, si) => {
       if (sec.tag) h += `<div class="sec-lbl">${sec.tag}</div>`;
-      sec.ex.forEach((ex, ei) => {
+      sec.ex.forEach((rawEx, ei) => {
+        const ex = resEx(rawEx);
         const k = ek(di,si,ei), on = ch[k] || false;
         const wv = w[ex.n];
         const wtH = wv ? `<span class="ex-wt">${wv} lbs</span>` : '';
@@ -61,6 +69,11 @@ function renderProg() {
 
 function toggleChk(k) { const c = chks(); c[k] = !c[k]; sChk(c); renderProg(); }
 function clearChk() { sChk({}); renderProg(); toast('Checkmarks cleared'); }
+function setBar(v) {
+  if (v === barOn()) return;
+  sBar(v); renderProg();
+  toast(v ? 'Pull-up bar exercises on' : 'Swapped to no-bar alternatives');
+}
 
 /* ═══════════════════ MUSCLE MODAL (+ weight editor) ═══════════════════ */
 function parseMuscles(mStr) {
@@ -270,9 +283,10 @@ function onClick(e) {
   const a = el.dataset;
   switch (a.act) {
     case 'tab':       switchTab(a.tab); break;
-    case 'row':       openMM(PROGRAM[+a.di].sections[+a.si].ex[+a.ei]); break;
+    case 'row':       openMM(resEx(PROGRAM[+a.di].sections[+a.si].ex[+a.ei])); break;
     case 'chk':       toggleChk(a.k); break;
     case 'clear':     clearChk(); break;
+    case 'bar':       setBar(a.v === '1'); break;
     case 'mm-close':  closeMM(); break;
     case 'bw-range':  bwSetRange(a.k); break;
     case 'bw-save':   bwSave(); break;

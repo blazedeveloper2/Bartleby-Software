@@ -6,7 +6,8 @@ module; a lightweight shell switches between them from the sidebar.
 Live apps:
 
 - **Workout** — 4-day upper/lower program tracker with a muscle-map modal
-  (tap an exercise to set its working weight) and a bodyweight trend chart.
+  (tap an exercise to set its working weight), a bodyweight trend chart, and a
+  pull-up-bar toggle that swaps bar exercises for dumbbell/bench alternatives.
 - **Finance** — expense tracker: log spending by category (add/delete your own
   categories) with a calendar date picker and notes, a filterable history with
   tap-to-view details, and Insights (category donut + jump-to-any month/year +

@@ -36,12 +36,22 @@
 .wk .ex-wt{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--green);background:var(--green-d);padding:3px 7px;border-radius:4px;white-space:nowrap}
 .wk .bench-tag{font-size:10px;font-weight:600;padding:3px 7px;border-radius:4px;white-space:nowrap}
 .wk .bench-flat{background:#1e3a5f30;color:#60a5fa}.wk .bench-30{background:#4a204030;color:var(--pink)}.wk .bench-85{background:#3b2e1030;color:var(--amber)}.wk .bench-55{background:#1e3a5f30;color:#60a5fa}
+.wk .grip{background:#8b5cf620;color:#a78bfa}
 .wk .ex-row.off .ex-name{opacity:.3;text-decoration:line-through;text-decoration-color:var(--text-3)}
 .wk .ex-row.off .ex-musc{opacity:.2}.wk .ex-row.off .ex-sets,.wk .ex-row.off .ex-wt,.wk .ex-row.off .bench-tag{opacity:.25}
 
 .wk .clear-bar{text-align:center;padding:16px 0}
 .wk .clear-btn{background:var(--bg-card);border:1px solid var(--border);color:var(--text-2);font-family:var(--font);font-size:12px;font-weight:600;padding:10px 24px;border-radius:var(--r);cursor:pointer;transition:all .15s}
 .wk .clear-btn:hover{background:var(--bg-hover);color:var(--text)}
+
+/* ── Equipment toggle (pull-up bar / no-bar alternatives) ── */
+.wk .eq-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:14px}
+.wk .eq-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
+.wk .eq-sub{font-size:11px;color:var(--text-3);margin-top:3px}
+.wk .eq-seg{display:flex;gap:3px;flex-shrink:0}
+.wk .eq-btn{padding:6px 12px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text-3);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .12s;white-space:nowrap}
+.wk .eq-btn:hover{color:var(--text-2)}
+.wk .eq-btn.sel{background:var(--blue-d);border-color:#3b82f640;color:var(--blue)}
 
 /* ── Muscle modal ── */
 .mm-overlay{position:fixed;inset:0;background:#08090de8;backdrop-filter:blur(16px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
