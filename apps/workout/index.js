@@ -1,12 +1,17 @@
 /* ═══════════════════════════════════════════════════════════
    WORKOUT APP
-   Program tracker (tap an exercise → muscle map + set its weight)
-   and a bodyweight trend tab. Local-first, event-delegated.
+   Program tracker (tap an exercise → muscle map + set its weight),
+   a bodyweight trend tab, and a progress/rank tab.
+   Local-first, event-delegated.
    ═══════════════════════════════════════════════════════════ */
 
 import { PROGRAM, MMAP } from './data.js';
 import { load, save, todayStr, dateStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
+import {
+  setsOf, syncDay, logPR, delSession, setReps, snapshot,
+  isLoggedToday, celebrationHTML, renderRank,
+} from './rank.js';
 
 /* ── namespaced storage ── */
 const chks = () => load('bp_chk', {});
@@ -18,10 +23,9 @@ const ek   = (d, s, e) => `${d}.${s}.${e}`;
 const bwAll = () => load('bp_bw', []);
 const bwSv  = l => save('bp_bw', l);
 
-/* Pull-up bar equipment flag. When off, exercises with an `alt`
-   render (and track weight) as their no-bar version. */
+/* Pull-up bar equipment flag, owned by Settings. When off, exercises
+   with an `alt` render (and track weight) as their no-bar version. */
 const barOn = () => load('bp_bar', true);
-const sBar  = v => save('bp_bar', v);
 const resEx = ex => (!barOn() && ex.alt) ? ex.alt : ex;
 
 /* ── module state ── */
@@ -43,13 +47,13 @@ const q = sel => root.querySelector(sel);
 /* ═══════════════════ PROGRAM TAB ═══════════════════ */
 function renderProg() {
   const p = q('#p-program'), ch = chks(), w = wts();
-  const bar = barOn();
-  let h = `<div class="eq-bar"><div class="eq-l"><div class="eq-title">Pull-Up Bar</div><div class="eq-sub">${bar ? 'Pull-Ups & Hanging Knee Raises need one.' : 'Swapped to dumbbell & bench alternatives.'}</div></div><div class="eq-seg"><button class="eq-btn ${bar?'sel':''}" data-act="bar" data-v="1">Have One</button><button class="eq-btn ${!bar?'sel':''}" data-act="bar" data-v="0">No Bar</button></div></div>`;
+  let h = '';
   PROGRAM.forEach((day, di) => {
     let tot = 0, dn = 0;
     day.sections.forEach((sec, si) => sec.ex.forEach((_, ei) => { tot++; if (ch[ek(di,si,ei)]) dn++; }));
     const comp = dn === tot && tot > 0;
-    h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge ${day.day}">${day.day}</span><span class="day-title">${day.label}</span></div><span class="day-prog ${comp?'done':''}">${dn}/${tot}</span></div><div class="day-body">`;
+    const xpH = comp && isLoggedToday(di) ? `<span class="day-xp logged">Logged</span>` : '';
+    h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge ${day.day}">${day.day}</span><span class="day-title">${day.label}</span></div><div class="day-top-r">${xpH}<span class="day-prog ${comp?'done':''}">${dn}/${tot}</span></div></div><div class="day-body">`;
     day.sections.forEach((sec, si) => {
       if (sec.tag) h += `<div class="sec-lbl">${sec.tag}</div>`;
       sec.ex.forEach((rawEx, ei) => {
@@ -67,13 +71,26 @@ function renderProg() {
   p.innerHTML = h;
 }
 
-function toggleChk(k) { const c = chks(); c[k] = !c[k]; sChk(c); renderProg(); }
-function clearChk() { sChk({}); renderProg(); toast('Checkmarks cleared'); }
-function setBar(v) {
-  if (v === barOn()) return;
-  sBar(v); renderProg();
-  toast(v ? 'Pull-up bar exercises on' : 'Swapped to no-bar alternatives');
+/* Completed exercises + hard sets for one day, under the current bar setting. */
+function dayTally(di, ch) {
+  let tot = 0, done = 0, sets = 0;
+  PROGRAM[di].sections.forEach((sec, si) => sec.ex.forEach((raw, ei) => {
+    tot++;
+    if (ch[ek(di,si,ei)]) { done++; sets += setsOf(resEx(raw)); }
+  }));
+  return { tot, done, sets };
 }
+
+function toggleChk(k) {
+  const c = chks(); c[k] = !c[k]; sChk(c);
+  const di = +k.split('.')[0];
+  const res = syncDay(di, dayTally(di, c));
+  renderProg();
+  if (!res) return;
+  renderRank(root);
+  if (res.logged && !showCelebration(res)) toast(`${res.label} logged`);
+}
+function clearChk() { sChk({}); renderProg(); toast('Checkmarks cleared'); }
 
 /* ═══════════════════ MUSCLE MODAL (+ weight editor) ═══════════════════ */
 function parseMuscles(mStr) {
@@ -110,10 +127,21 @@ function closeMM() { q('#mm-ol').classList.remove('on'); mmEx = null; }
 
 function setMMWeight(el) {
   if (!mmEx) return;
-  const w = wts(), v = parseFloat(el.value);
-  if (isNaN(v) || v <= 0) delete w[mmEx.n]; else w[mmEx.n] = v;
-  sWt(w); renderProg();
-  toast(`${mmEx.n}: ${v > 0 ? v + ' lbs' : 'cleared'}`);
+  const name = mmEx.n;
+  const before = snapshot();               // must precede the bp_wt write
+  const w = wts(), v = parseFloat(el.value), prev = w[name];
+  if (isNaN(v) || v <= 0) delete w[name]; else w[name] = v;
+  sWt(w);
+  const res = logPR(name, prev, v, before);   // only fires on a genuine increase
+  renderProg();
+  if (res) {
+    renderRank(root);
+    closeMM();
+    if (!showCelebration(res)) toast(`${name} ${prev} → ${v} lbs`);
+    return;
+  }
+  renderRank(root);
+  toast(`${name}: ${v > 0 ? v + ' lbs' : 'cleared'}`);
 }
 
 /* ═══════════════════ BODYWEIGHT ═══════════════════ */
@@ -157,6 +185,10 @@ function bwChartSVG(entries) {
     const e = entries[0];
     return `<div class="bw-empty">Just one entry: <b style="color:var(--text)">${e.w} lbs</b> on ${bwFmt(e.d)}.<br>Log more to see a trend.</div>`;
   }
+  /* Pull the palette from the active theme so the chart re-colours with it. */
+  const cs = getComputedStyle(document.documentElement);
+  const C = k => cs.getPropertyValue(k).trim();
+  const AC = C('--blue'), GRID = C('--grid'), AXIS = C('--text-3'), CARD = C('--bg-card');
   const W=600,H=200,PADL=36,PADR=12,PADT=14,PADB=22;
   const innerW=W-PADL-PADR, innerH=H-PADT-PADB;
   const ws=entries.map(e=>e.w);
@@ -172,16 +204,16 @@ function bwChartSVG(entries) {
   for (let i=0;i<=gridCount;i++) {
     const v=yMin+((yMax-yMin)*i/gridCount);
     const y=(PADT+innerH-(i/gridCount)*innerH).toFixed(1);
-    gridHTML+=`<line x1="${PADL}" y1="${y}" x2="${W-PADR}" y2="${y}" stroke="#1c2030" stroke-width="1" stroke-dasharray="2,3"/><text x="${PADL-6}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#4a5068" font-family="JetBrains Mono, monospace" font-size="9">${v.toFixed(0)}</text>`;
+    gridHTML+=`<line x1="${PADL}" y1="${y}" x2="${W-PADR}" y2="${y}" stroke="${GRID}" stroke-width="1" stroke-dasharray="2,3"/><text x="${PADL-6}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${AXIS}" font-family="JetBrains Mono, monospace" font-size="9">${v.toFixed(0)}</text>`;
   }
   const xIdx=n>=4?[0,Math.floor(n/2),n-1]:[0,n-1];
-  const xHTML=xIdx.map(i=>`<text x="${xOf(i).toFixed(1)}" y="${H-6}" text-anchor="middle" fill="#4a5068" font-family="JetBrains Mono, monospace" font-size="9">${bwFmt(entries[i].d)}</text>`).join('');
-  const dotsHTML=points.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="#3b82f6" stroke="#10121a" stroke-width="2"><title>${entries[i].w} lbs · ${bwFmt(entries[i].d)}</title></circle>`).join('');
+  const xHTML=xIdx.map(i=>`<text x="${xOf(i).toFixed(1)}" y="${H-6}" text-anchor="middle" fill="${AXIS}" font-family="JetBrains Mono, monospace" font-size="9">${bwFmt(entries[i].d)}</text>`).join('');
+  const dotsHTML=points.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="${AC}" stroke="${CARD}" stroke-width="2"><title>${entries[i].w} lbs · ${bwFmt(entries[i].d)}</title></circle>`).join('');
   return `<svg class="bw-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-    <defs><linearGradient id="bw-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.28"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>
+    <defs><linearGradient id="bw-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${AC}" stop-opacity="0.28"/><stop offset="100%" stop-color="${AC}" stop-opacity="0"/></linearGradient></defs>
     ${gridHTML}
     <path d="${areaPath}" fill="url(#bw-grad)"/>
-    <path d="${linePath}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${linePath}" fill="none" stroke="${AC}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     ${dotsHTML}
     ${xHTML}
   </svg>`;
@@ -267,17 +299,39 @@ function bwDelete(d) {
   toast('Entry deleted');
 }
 
+/* ═══════════════════ CELEBRATION ═══════════════════ */
+/* Rank-ups and milestone unlocks get a card, not a toast — the reward
+   moment is the whole point of the progress tab. Returns false when
+   there was nothing worth interrupting for (caller falls back to a toast). */
+function showCelebration(res) {
+  const html = celebrationHTML(res);
+  if (!html) return false;
+  q('#lv-body').innerHTML = html;
+  q('#lv-ol').classList.add('on');
+  return true;
+}
+function closeCelebration() { q('#lv-ol').classList.remove('on'); }
+
+function progDelete(d, di) {
+  delSession(d, di);
+  renderRank(root); renderProg();
+  toast('Session removed');
+}
+function rkSetReps(r) { setReps(r); renderRank(root); }
+
 /* ═══════════════════ TABS ═══════════════════ */
 function switchTab(tab) {
   activeTab = tab;
   root.querySelectorAll('.wk .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   root.querySelectorAll('.wk .panel').forEach(pl => pl.classList.remove('active'));
   q('#p-' + tab).classList.add('active');
+  if (tab === 'rank') renderRank(root);
 }
 
 /* ═══════════════════ EVENT DELEGATION ═══════════════════ */
 function onClick(e) {
   if (e.target.classList && e.target.classList.contains('mm-overlay')) { closeMM(); return; }
+  if (e.target.classList && e.target.classList.contains('lv-overlay')) { closeCelebration(); return; }
   const el = e.target.closest('[data-act]');
   if (!el || !root.contains(el)) return;
   const a = el.dataset;
@@ -286,16 +340,27 @@ function onClick(e) {
     case 'row':       openMM(resEx(PROGRAM[+a.di].sections[+a.si].ex[+a.ei])); break;
     case 'chk':       toggleChk(a.k); break;
     case 'clear':     clearChk(); break;
-    case 'bar':       setBar(a.v === '1'); break;
     case 'mm-close':  closeMM(); break;
     case 'bw-range':  bwSetRange(a.k); break;
     case 'bw-save':   bwSave(); break;
     case 'bw-edit':   bwEdit(a.d); break;
     case 'bw-del':    bwDelete(a.d); break;
     case 'bw-cancel': bwCancelEdit(); break;
+    case 'lv-close':  closeCelebration(); break;
+    case 'pg-del':    progDelete(a.d, a.di); break;
+    case 'rk-reps':   rkSetReps(+a.r); break;
   }
 }
 function onChange(e) { if (e.target.id === 'mm-wt') setMMWeight(e.target); }
+
+/* Settings changed the pull-up-bar flag or the theme. Re-render everything:
+   the program swaps exercises, and the bodyweight chart bakes theme colours
+   into its SVG at render time so it has to be redrawn too. */
+function onExternalChange() {
+  if (!root) return;
+  renderProg(); renderBW();
+  if (activeTab === 'rank') renderRank(root);
+}
 function onKeydown(e) {
   if (e.key !== 'Enter') return;
   if (e.target.id === 'bw-weight') bwSave();
@@ -336,19 +401,21 @@ const MUSCLE_SVG = `<svg viewBox="0 0 320 290" xmlns="http://www.w3.org/2000/svg
   <ellipse cx="228" cy="180" rx="6" ry="4" class="m-base"/><ellipse cx="248" cy="180" rx="6" ry="4" class="m-base"/>
   <ellipse id="b-calf-l" cx="228" cy="207" rx="8" ry="20" class="m-region"/><ellipse id="b-calf-r" cx="248" cy="207" rx="8" ry="20" class="m-region"/>
   <ellipse cx="202" cy="134" rx="5" ry="6" class="m-base"/><ellipse cx="274" cy="134" rx="5" ry="6" class="m-base"/>
-  <line x1="160" y1="18" x2="160" y2="255" stroke="#1c2030" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="160" y1="18" x2="160" y2="255" stroke="currentColor" opacity=".25" stroke-width="1" stroke-dasharray="4,4"/>
 </svg>`;
 
 function template() {
   return `<div class="wk">
-    <div class="app-head"><h1>Build Program</h1><p>Dumbbells + Bench · 4 Day Upper/Lower · Weight</p></div>
+    <div class="app-head"><h1>Build Program</h1><p>Dumbbells + Bench · 4 Day Upper/Lower · Rank Up</p></div>
     <nav class="nav"><div class="nav-inner">
       <button class="tab active" data-act="tab" data-tab="program">Program</button>
       <button class="tab" data-act="tab" data-tab="bw">Weight</button>
+      <button class="tab" data-act="tab" data-tab="rank">Rank</button>
     </div></nav>
     <div class="app-wrap">
       <div class="panel active" id="p-program"></div>
       <div class="panel" id="p-bw"></div>
+      <div class="panel" id="p-rank"></div>
     </div>
 
     <div class="mm-overlay" id="mm-ol">
@@ -363,6 +430,8 @@ function template() {
         <div class="mm-muscles"><div class="mm-muscles-title">Target Muscles</div><div class="mm-muscle-list" id="mm-mlist"></div></div>
       </div>
     </div>
+
+    <div class="lv-overlay" id="lv-ol"><div id="lv-body"></div></div>
   </div>`;
 }
 
@@ -379,6 +448,7 @@ export default {
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
     root.addEventListener('keydown', onKeydown);
+    window.addEventListener('bs:datachange', onExternalChange);
     renderProg(); renderBW();
     switchTab(activeTab);
   },
@@ -388,6 +458,7 @@ export default {
       root.removeEventListener('change', onChange);
       root.removeEventListener('keydown', onKeydown);
     }
+    window.removeEventListener('bs:datachange', onExternalChange);
     root = null;
   },
 };

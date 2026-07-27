@@ -7,15 +7,27 @@ Live apps:
 
 - **Workout** — 4-day upper/lower program tracker with a muscle-map modal
   (tap an exercise to set its working weight), a bodyweight trend chart, and a
-  pull-up-bar toggle that swaps bar exercises for dumbbell/bench alternatives.
+  **Rank** tab: a letter grade (F→SS) computed from your working weights
+  against published population strength standards relative to your bodyweight,
+  plus streaks, a consistency heatmap, milestones and a daily verse.
 - **Finance** — expense tracker: log spending by category (add/delete your own
   categories) with a calendar date picker and notes, a filterable history with
   tap-to-view details, and Insights (category donut + jump-to-any month/year +
   12-month trend).
 
+**Settings** (gear, bottom of the sidebar) holds the theme picker, the
+pull-up-bar toggle, and backup.
+
 All data is stored locally in your browser (`localStorage`). Nothing is sent
 anywhere. Use **Settings → Export Backup** to save a `.json` file before
-switching devices, and **Import Backup** to restore it.
+switching devices, and **Import Backup** to restore it. Backups cover every
+`bp_` (workout), `fin_` (finance) and `bs_` (suite settings, e.g. theme) key.
+
+## Themes
+
+`Arcade` (orange game-HUD, animated) is the default; `Midnight` is the original
+still blue-grey. A theme is one block of CSS variables plus an optional
+animation set — see `assets/css/themes.css` and `assets/js/theme.js`.
 
 ---
 
@@ -26,16 +38,19 @@ Bartleby Software/
 ├── index.html               # the shell (loads the apps)
 ├── assets/
 │   ├── css/
-│   │   ├── tokens.css        # design system: colors, fonts, reset, shared bits
-│   │   └── shell.css         # sidebar / app-switcher layout
+│   │   ├── tokens.css        # theme-independent tokens + reset + shared bits
+│   │   ├── themes.css        # one palette block per theme + arcade animations
+│   │   └── shell.css         # sidebar / app-switcher / settings layout
 │   └── js/
-│       ├── shell.js          # app registry + router
+│       ├── shell.js          # app registry + router + settings/backup
+│       ├── theme.js          # theme registry, get/set/apply
 │       ├── storage.js        # localStorage helpers
 │       └── ui.js             # toast helper
 ├── apps/
-│   ├── workout/              # workout app  (data.js + index.js + workout.css)
-│   └── finance/              # finance scaffold
+│   ├── workout/              # index.js + data.js + rank.js + standards.js + workout.css
+│   └── finance/              # expense tracker
 ├── .github/workflows/deploy.yml   # auto-deploy to GitHub Pages on every push
+├── start.bat                 # one-click: run locally (double-click this)
 ├── sync.bat                  # one-click: commit + push
 └── README.md
 ```
@@ -53,14 +68,20 @@ That's it — it shows up as a tab automatically.
 
 ## Running locally
 
-The apps use ES modules, so they need to be served over `http://` (not opened
-as a `file://` path). Any static server works, e.g.:
+**Double-click `start.bat`.** It serves the folder and opens your browser.
+Leave the console window open while you use the app.
+
+Do **not** open `index.html` directly — the apps use ES modules, which browsers
+refuse to load from a `file://` path, so you'd get a blank page. Any static
+server works if you'd rather do it by hand:
 
 ```
 npx serve .
 ```
 
-Then open the printed URL (e.g. http://localhost:3000).
+Note that each origin has its own `localStorage`: data you enter on
+`localhost` is separate from data on the published GitHub Pages site. Use
+Export/Import to move between them.
 
 ---
 

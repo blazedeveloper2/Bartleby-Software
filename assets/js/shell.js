@@ -10,10 +10,12 @@
 import workout from '../../apps/workout/index.js';
 import finance from '../../apps/finance/index.js';
 import { toast } from './ui.js';
+import { THEMES, getTheme, setTheme, applyTheme } from './theme.js';
 
 const APPS = [workout, finance];
 const ACTIVE_KEY = 'bartleby_active_app';
-const BACKUP_PREFIXES = ['bp_', 'fin_'];      // keys included in a backup
+// Prefixes included in a backup. bs_ carries suite-level settings (theme).
+const BACKUP_PREFIXES = ['bp_', 'fin_', 'bs_'];
 const STORAGE_BUDGET = 5 * 1024 * 1024;       // ~5 MB typical localStorage cap
 
 const root = document.getElementById('app-root');
@@ -94,7 +96,22 @@ function buildSettings() {
     <div class="sx-card">
       <div class="sx-head"><div class="sx-title">Settings</div><button class="sx-close" data-sx="close">&times;</button></div>
       <div class="sx-body">
-        <div class="sx-sec-lbl">Data &amp; Backup</div>
+        <div class="sx-sec-lbl">Theme</div>
+        <div class="sx-themes" id="sx-themes"></div>
+
+        <div class="sx-sec-lbl mt">Equipment</div>
+        <div class="sx-row">
+          <div class="sx-row-l">
+            <div class="sx-row-t">Pull-Up Bar</div>
+            <div class="sx-row-s" id="sx-eq-sub"></div>
+          </div>
+          <div class="sx-seg" id="sx-eq">
+            <button class="sx-seg-btn" data-sx="bar" data-v="1">Have One</button>
+            <button class="sx-seg-btn" data-sx="bar" data-v="0">No Bar</button>
+          </div>
+        </div>
+
+        <div class="sx-sec-lbl mt">Data &amp; Backup</div>
         <div class="sx-usage">
           <div class="sx-usage-top"><span>On-device storage</span><span id="sx-usage-txt"></span></div>
           <div class="sx-bar"><div class="sx-bar-fill" id="sx-bar-fill"></div></div>
@@ -111,13 +128,57 @@ function buildSettings() {
 
   el.addEventListener('click', e => {
     if (e.target === el) { closeSettings(); return; }
-    const act = e.target.closest('[data-sx]')?.dataset.sx;
+    const btn = e.target.closest('[data-sx]');
+    const act = btn?.dataset.sx;
     if (act === 'close') closeSettings();
     else if (act === 'export') exportBackup();
     else if (act === 'import') el.querySelector('#sx-file').click();
+    else if (act === 'theme') pickTheme(btn.dataset.t);
+    else if (act === 'bar') pickBar(btn.dataset.v === '1');
   });
   el.querySelector('#sx-file').addEventListener('change', importBackup);
   return el;
+}
+
+/* ── theme + equipment settings ── */
+function pickTheme(id) {
+  if (id === getTheme()) return;
+  setTheme(id);
+  syncSettings();
+  broadcast();                       // apps re-render: some bake colours into SVG
+  toast(`${THEMES.find(t => t.id === id)?.name || id} theme`);
+}
+
+const barOn = () => { try { return JSON.parse(localStorage.getItem('bp_bar')) ?? true; } catch { return true; } };
+function pickBar(v) {
+  if (v === barOn()) return;
+  localStorage.setItem('bp_bar', JSON.stringify(v));
+  syncSettings();
+  broadcast();
+  toast(v ? 'Pull-up bar exercises on' : 'Swapped to no-bar alternatives');
+}
+
+/* Tell the mounted app that shared state changed. */
+const broadcast = () => window.dispatchEvent(new CustomEvent('bs:datachange'));
+
+/* Paint the current values into an already-built settings modal. */
+function syncSettings() {
+  const el = document.getElementById('sx-ol');
+  if (!el) return;
+  const active = getTheme();
+  el.querySelector('#sx-themes').innerHTML = THEMES.map(t => `
+    <button class="sx-theme ${t.id === active ? 'sel' : ''}" data-sx="theme" data-t="${t.id}">
+      <span class="sx-sw">${t.sw.map(c => `<i style="background:${c}"></i>`).join('')}</span>
+      <span class="sx-theme-txt"><b>${t.name}</b><em>${t.desc}</em></span>
+      <span class="sx-tick"></span>
+    </button>`).join('');
+
+  const bar = barOn();
+  el.querySelector('#sx-eq-sub').textContent = bar
+    ? 'Pull-Ups & Hanging Knee Raises need one.'
+    : 'Swapped to dumbbell & bench alternatives.';
+  el.querySelectorAll('#sx-eq .sx-seg-btn').forEach(b =>
+    b.classList.toggle('sel', (b.dataset.v === '1') === bar));
 }
 
 function openSettings() {
@@ -128,6 +189,7 @@ function openSettings() {
   el.querySelector('#sx-usage-txt').textContent =
     `${kb < 1024 ? kb.toFixed(1) + ' KB' : (kb / 1024).toFixed(2) + ' MB'} of ~5 MB`;
   el.querySelector('#sx-bar-fill').style.width = Math.max(pct, 1.5) + '%';
+  syncSettings();
   el.classList.add('on');
 }
 function closeSettings() { document.getElementById('sx-ol')?.classList.remove('on'); }
@@ -172,6 +234,7 @@ function importBackup(e) {
 document.getElementById('settings-btn')?.addEventListener('click', openSettings);
 
 /* ── boot ── */
+applyTheme(getTheme());
 renderNav();
 // Preload every app's stylesheet up front so switching tabs never flashes
 // unstyled markup (the CSS is already applied before mount() injects HTML).

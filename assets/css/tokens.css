@@ -3,23 +3,9 @@
    Shared tokens, reset, and base primitives used by every app.
    ═══════════════════════════════════════════════════════════ */
 
+/* Colours and radii live in themes.css (one block per theme, applied via
+   <html data-theme="...">). Only theme-independent tokens belong here. */
 :root {
-  /* Surfaces */
-  --bg:#08090d;--bg-card:#10121a;--bg-alt:#141722;--bg-hover:#1a1d2a;
-  --bg-input:#0c0e14;--border:#1c2030;--border-lt:#252a3a;
-
-  /* Text */
-  --text:#e2e6f0;--text-2:#8b92a8;--text-3:#4a5068;
-
-  /* Accents */
-  --blue:#3b82f6;--blue-d:#3b82f620;--purple:#8b5cf6;
-  --amber:#f59e0b;--red:#ef4444;--red-d:#ef444420;
-  --green:#22c55e;--green-d:#22c55e20;--pink:#f472b6;
-
-  /* Radii */
-  --r:10px;--rs:6px;
-
-  /* Type */
   --font:'DM Sans',system-ui,sans-serif;
   --mono:'JetBrains Mono',monospace;
 }

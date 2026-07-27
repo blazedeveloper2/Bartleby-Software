@@ -1,0 +1,170 @@
+/* ═══════════════════════════════════════════════════════════
+   THEMES
+
+   Every colour in the suite comes from the variables below, so a
+   theme is just one block of overrides on <html data-theme="...">.
+
+   A theme owns more than colour: the `arcade` block at the bottom
+   layers on the animation set (scanlines, shimmer sweeps, glow
+   pulses, staggered card entrances) that `dark` deliberately omits.
+
+   Adding a theme: copy a palette block, give it a data-theme name,
+   and add it to THEMES in assets/js/theme.js.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   ARCADE — the default. Warm, high-contrast, game-HUD orange.
+   ═══════════════════════════════════════════════════════════ */
+:root,
+html[data-theme="arcade"] {
+  --bg:#0a0705;--bg-card:#150f0a;--bg-alt:#1d140c;--bg-hover:#241a10;
+  --bg-input:#0f0a06;--border:#2b1d10;--border-lt:#402a15;
+
+  --text:#fdf3e7;--text-2:#b0987f;--text-3:#7a6249;
+
+  --blue:#ff7a18;--blue-d:#ff7a1820;          /* primary accent */
+  --purple:#ffb43f;--amber:#ffc247;
+  --red:#ff4d3d;--red-d:#ff4d3d20;
+  --green:#3fdb7a;--green-d:#3fdb7a1e;--pink:#ff9c5b;
+
+  --glow:#ff7a18;--glow-2:#ffb43f;
+  --sel-bd:#ff7a1855;--ol-bg:#0a0705f0;--btn-hover:#e0620c;
+  --map-base:#1a1108;--map-region:#241708;
+  --hm-off:#1e1409;--hm-void:#140d07;
+  --grid:#2b1d10;
+  /* rank bands — need real hue separation, not six shades of orange */
+  --rk-f:#6b5540;--rk-d:#e0452f;--rk-c:#ffb01f;
+  --rk-b:#ff7a18;--rk-a:#c04dff;--rk-s:#3fdb7a;--rk-ss:#fff3d6;
+  --r:10px;--rs:6px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DARK — the original cool-grey/blue palette. No animation set.
+   ═══════════════════════════════════════════════════════════ */
+html[data-theme="dark"] {
+  --bg:#08090d;--bg-card:#10121a;--bg-alt:#141722;--bg-hover:#1a1d2a;
+  --bg-input:#0c0e14;--border:#1c2030;--border-lt:#252a3a;
+
+  --text:#e2e6f0;--text-2:#8b92a8;--text-3:#4a5068;
+
+  --blue:#3b82f6;--blue-d:#3b82f620;--purple:#8b5cf6;
+  --amber:#f59e0b;--red:#ef4444;--red-d:#ef444420;
+  --green:#22c55e;--green-d:#22c55e20;--pink:#f472b6;
+
+  --glow:#3b82f6;--glow-2:#8b5cf6;
+  --sel-bd:#3b82f640;--ol-bg:#08090de8;--btn-hover:#2563eb;
+  --map-base:#151922;--map-region:#1a1e2a;
+  --hm-off:#171a26;--hm-void:#12151f;
+  --grid:#1c2030;
+  --rk-f:#4a5068;--rk-d:#ef4444;--rk-c:#f59e0b;
+  --rk-b:#3b82f6;--rk-a:#8b5cf6;--rk-s:#22c55e;--rk-ss:#f472b6;
+  --r:10px;--rs:6px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ARCADE ANIMATIONS
+   Scoped to the theme so `dark` stays completely still.
+   All of it collapses under prefers-reduced-motion at the bottom.
+   ═══════════════════════════════════════════════════════════ */
+
+@keyframes ar-sweep   { 0%{transform:translateX(-120%)} 100%{transform:translateX(320%)} }
+@keyframes ar-pulse   { 0%,100%{opacity:.5} 50%{opacity:1} }
+/* for large tinted shapes: stays subtle, since animating opacity would
+   otherwise blow past the low base value the shape is drawn with */
+@keyframes ar-bloom   { 0%,100%{opacity:.06} 50%{opacity:.13} }
+@keyframes ar-bloom-s { 0%,100%{opacity:.08} 50%{opacity:.16} }
+@keyframes ar-glow    { 0%,100%{text-shadow:0 0 12px var(--glow),0 0 34px #ff7a1840} 50%{text-shadow:0 0 22px var(--glow),0 0 60px #ff7a1870} }
+@keyframes ar-rise    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+@keyframes ar-pop     { 0%{transform:scale(.7)} 60%{transform:scale(1.18)} 100%{transform:scale(1)} }
+@keyframes ar-scan    { 0%{transform:translateY(-100%)} 100%{transform:translateY(2400%)} }
+@keyframes ar-shimmer { 0%{background-position:-220% 0} 100%{background-position:220% 0} }
+@keyframes ar-flicker { 0%,100%{opacity:1} 92%{opacity:1} 94%{opacity:.72} 96%{opacity:1} }
+
+/* ── cards get a warm edge + a staggered entrance ── */
+html[data-theme="arcade"] .day-card,
+html[data-theme="arcade"] .pg-card,
+html[data-theme="arcade"] .bw-chart-card,
+html[data-theme="arcade"] .bw-add {
+  animation:ar-rise .34s cubic-bezier(.22,.68,0,1.1) both;
+  box-shadow:inset 0 1px 0 #ffffff06;
+}
+html[data-theme="arcade"] .day-card:nth-child(2){animation-delay:.04s}
+html[data-theme="arcade"] .day-card:nth-child(3){animation-delay:.08s}
+html[data-theme="arcade"] .day-card:nth-child(4){animation-delay:.12s}
+html[data-theme="arcade"] .day-card:nth-child(5){animation-delay:.16s}
+html[data-theme="arcade"] .pg-card:nth-child(3){animation-delay:.05s}
+html[data-theme="arcade"] .pg-card:nth-child(4){animation-delay:.1s}
+html[data-theme="arcade"] .pg-card:nth-child(5){animation-delay:.15s}
+
+html[data-theme="arcade"] .day-card:hover,
+html[data-theme="arcade"] .pg-card:hover { border-color:#4a2f16 }
+
+/* ── clipped corners on the big surfaces reads as HUD panel ── */
+html[data-theme="arcade"] .rk-hero {
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+}
+
+/* ── tab underline glows ── */
+html[data-theme="arcade"] .wk .tab.active,
+html[data-theme="arcade"] .fin .tab.active { box-shadow:0 2px 12px -2px var(--glow) }
+
+/* ── every progress bar gets a light sweeping across it ── */
+html[data-theme="arcade"] .sx-bar-fill { position:relative;overflow:hidden }
+html[data-theme="arcade"] .sx-bar-fill::after {
+  content:'';position:absolute;inset:0;width:34%;
+  background:linear-gradient(90deg,transparent,#ffffff70,transparent);
+  animation:ar-sweep 2.4s ease-in-out infinite;
+}
+
+/* ── the rank letter is the hero element: make it burn ── */
+html[data-theme="arcade"] .rk-letter { animation:ar-glow 3s ease-in-out infinite }
+html[data-theme="arcade"] .rk-hero::after { animation:ar-bloom 5s ease-in-out infinite }
+
+/* the band track lights up its segments and the marker burns */
+html[data-theme="arcade"] .rk-seg { opacity:.42 }
+html[data-theme="arcade"] .rk-marker { background:var(--glow-2);box-shadow:0 0 0 2px var(--bg-card),0 0 16px var(--glow) }
+html[data-theme="arcade"] .rk-verse-mark { animation:ar-bloom-s 6s ease-in-out infinite }
+
+/* a slow scanline crawling down the rank hero */
+html[data-theme="arcade"] .rk-hero > .rk-scan {
+  display:block;position:absolute;left:0;right:0;height:2px;top:0;
+  background:linear-gradient(90deg,transparent,#ff7a1855,transparent);
+  animation:ar-scan 7s linear infinite;pointer-events:none;
+}
+
+/* ── checkbox pop ── */
+html[data-theme="arcade"] .wk .ex-chk.on { animation:ar-pop .26s cubic-bezier(.22,.68,0,1.1) }
+html[data-theme="arcade"] .wk .ex-chk.on { box-shadow:0 0 14px -2px var(--glow) }
+
+/* ── heatmap: trained days glow, today flickers like a live cursor ── */
+html[data-theme="arcade"] .pg-hm-c.hit { box-shadow:0 0 7px -1px #3fdb7a90 }
+html[data-theme="arcade"] .pg-hm-c.today { animation:ar-flicker 4s linear infinite }
+
+/* ── unlocked milestones shimmer ── */
+html[data-theme="arcade"] .pg-b.on .pg-b-n {
+  background:linear-gradient(90deg,var(--text) 35%,var(--glow-2) 50%,var(--text) 65%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:ar-shimmer 4.5s linear infinite;
+}
+
+/* ── celebration lands harder ── */
+html[data-theme="arcade"] .lv-rank-n { animation:ar-glow 1.6s ease-in-out infinite }
+html[data-theme="arcade"] .lv-card { box-shadow:0 0 0 1px #ff7a1830,0 30px 90px -20px #000 }
+
+/* ── buttons pick up a warm rim ── */
+html[data-theme="arcade"] .bw-add-btn,
+html[data-theme="arcade"] .lv-btn,
+html[data-theme="arcade"] .sx-btn.pri { box-shadow:0 0 18px -6px var(--glow) }
+
+/* ── sidebar active app ── */
+html[data-theme="arcade"] .app-btn.active { box-shadow:inset 2px 0 0 var(--glow),0 0 24px -12px var(--glow) }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="arcade"] *,
+  html[data-theme="arcade"] *::before,
+  html[data-theme="arcade"] *::after {
+    animation-duration:.001s !important;
+    animation-iteration-count:1 !important;
+  }
+}
