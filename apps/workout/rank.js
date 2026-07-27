@@ -53,23 +53,76 @@ const ICO = {
   target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
   peak:   '<path d="M2 20l6.5-13L13 15l3-4.5L22 20z"/>',
   star:   '<polygon points="12 3 14.6 9 21 9.7 16.2 14 17.5 20.5 12 17.2 6.5 20.5 7.8 14 3 9.7 9.4 9"/>',
+  shield: '<path d="M12 2.5l8 3v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10v-6z"/>',
+  crown:  '<path d="M3 7l4 4 5-7 5 7 4-4-2 12H5z"/>',
+  scale:  '<path d="M12 4v16"/><path d="M5 8h14"/><circle cx="5" cy="8" r="2.5"/><circle cx="19" cy="8" r="2.5"/>',
+  clock:  '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>',
 };
 const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICO[k]}</svg>`;
 
+/* Achievement table. `t` receives a merged view of consistency stats and
+   strength state (see earned()), so a badge can key off either. Locked ones
+   display `req`, which is what makes them pull you forward. */
+const CATS = ['Consistency', 'Strength', 'Volume', 'Progression'];
 const BADGES = [
-  { id:'first',    ico:'bolt',   n:'First Rep',        req:'Finish 1 session',            t:s => s.sessions >= 1 },
-  { id:'ten',      ico:'bolt',   n:'Double Digits',    req:'Finish 10 sessions',          t:s => s.sessions >= 10 },
-  { id:'pr1',      ico:'target', n:'Stronger',         req:'Raise a working weight',      t:s => s.prs >= 1 },
-  { id:'week',     ico:'check',  n:'Perfect Week',     req:`All ${WEEK_TARGET} days in one week`, t:s => s.perfectWeeks >= 1 },
-  { id:'streak8',  ico:'flame',  n:'Unbroken',         req:'8 training days in a row',    t:s => s.best >= 8 },
-  { id:'fifty',    ico:'medal',  n:'Half Century',     req:'Finish 50 sessions',          t:s => s.sessions >= 50 },
-  { id:'pr15',     ico:'target', n:'Overloaded',       req:'15 working-weight increases', t:s => s.prs >= 15 },
-  { id:'weeks4',   ico:'cal',    n:'Full Month',       req:'4 perfect weeks',             t:s => s.perfectWeeks >= 4 },
-  { id:'load100',  ico:'peak',   n:'Plus One Hundred', req:'+100 lbs of load added',      t:s => s.loadAdded >= 100 },
-  { id:'sets500',  ico:'star',   n:'500 Hard Sets',    req:'Complete 500 hard sets',      t:s => s.sets >= 500 },
-  { id:'streak20', ico:'flame',  n:'Limiter Off',      req:'20 training days in a row',   t:s => s.best >= 20 },
-  { id:'hundred',  ico:'trophy', n:'Centurion',        req:'Finish 100 sessions',         t:s => s.sessions >= 100 },
+  /* -- Consistency -- */
+  { id:'first',     cat:0, ico:'bolt',   n:'First Rep',        req:'Finish 1 session',               t:s => s.sessions >= 1 },
+  { id:'ten',       cat:0, ico:'bolt',   n:'Double Digits',    req:'Finish 10 sessions',             t:s => s.sessions >= 10 },
+  { id:'week',      cat:0, ico:'check',  n:'Perfect Week',     req:`All ${WEEK_TARGET} days in one week`, t:s => s.perfectWeeks >= 1 },
+  { id:'streak8',   cat:0, ico:'flame',  n:'Unbroken',         req:'8 training days in a row',       t:s => s.best >= 8 },
+  { id:'weeks4',    cat:0, ico:'cal',    n:'Full Month',       req:'4 perfect weeks',                t:s => s.perfectWeeks >= 4 },
+  { id:'fifty',     cat:0, ico:'medal',  n:'Half Century',     req:'Finish 50 sessions',             t:s => s.sessions >= 50 },
+  { id:'streak20',  cat:0, ico:'flame',  n:'Limiter Off',      req:'20 training days in a row',      t:s => s.best >= 20 },
+  { id:'comeback',  cat:0, ico:'clock',  n:'No Excuses',       req:'Train again after 14+ days off', t:s => s.maxGap >= 14 },
+  { id:'weeks10',   cat:0, ico:'cal',    n:'Ten Out Of Ten',   req:'10 perfect weeks',               t:s => s.perfectWeeks >= 10 },
+  { id:'hundred',   cat:0, ico:'trophy', n:'Centurion',        req:'Finish 100 sessions',            t:s => s.sessions >= 100 },
+  { id:'streak40',  cat:0, ico:'flame',  n:'Immovable',        req:'40 training days in a row',      t:s => s.best >= 40 },
+  { id:'twoHundred',cat:0, ico:'trophy', n:'Double Century',   req:'Finish 200 sessions',            t:s => s.sessions >= 200 },
+
+  /* -- Strength: the letter, never attendance -- */
+  { id:'rankD',     cat:1, ico:'shield', n:'On The Board',     req:'Reach rank D overall',           t:s => s.rankIdx >= 1 },
+  { id:'rankC',     cat:1, ico:'shield', n:'Off The Floor',    req:'Reach rank C overall',           t:s => s.rankIdx >= 2 },
+  { id:'liftB',     cat:1, ico:'star',   n:'One Good Lift',    req:'Any single lift to B',           t:s => s.bestLift >= 3 },
+  { id:'rankB',     cat:1, ico:'shield', n:'Perfectly Average',req:'Reach rank B overall',           t:s => s.rankIdx >= 3 },
+  { id:'noWeak',    cat:1, ico:'target', n:'No Weak Links',    req:'Every scored lift at C or above', t:s => s.scored >= 8 && s.minPct >= 20 },
+  { id:'balanced',  cat:1, ico:'target', n:'Symmetry',         req:'Under 15 points between your best and worst lift', t:s => s.scored >= 8 && s.spread <= 15 },
+  { id:'liftA',     cat:1, ico:'star',   n:'Genuinely Strong', req:'Any single lift to A',           t:s => s.bestLift >= 4 },
+  { id:'p4p',       cat:1, ico:'peak',   n:'Pound For Pound',  req:'Any lift at 1.0x your bodyweight', t:s => s.maxRatio >= 1 },
+  { id:'rankA',     cat:1, ico:'shield', n:'Top Fifth',        req:'Reach rank A overall',           t:s => s.rankIdx >= 4 },
+  { id:'liftS',     cat:1, ico:'crown',  n:'Specialist',       req:'Any single lift to S',           t:s => s.bestLift >= 5 },
+  { id:'rankS',     cat:1, ico:'crown',  n:'Elite',            req:'Reach rank S overall',           t:s => s.rankIdx >= 5 },
+
+  /* -- Volume -- */
+  { id:'sets500',   cat:2, ico:'star',   n:'500 Hard Sets',    req:'Complete 500 hard sets',         t:s => s.sets >= 500 },
+  { id:'sets1500',  cat:2, ico:'star',   n:'1,500 Hard Sets',  req:'Complete 1,500 hard sets',       t:s => s.sets >= 1500 },
+  { id:'sets4000',  cat:2, ico:'trophy', n:'4,000 Hard Sets',  req:'Complete 4,000 hard sets',       t:s => s.sets >= 4000 },
+
+  /* -- Progression -- */
+  { id:'pr1',       cat:3, ico:'target', n:'Stronger',         req:'Raise a working weight',         t:s => s.prs >= 1 },
+  { id:'fullSheet', cat:3, ico:'check',  n:'Full Sheet',       req:'A weight logged on every scored lift', t:s => s.allLogged },
+  { id:'pr15',      cat:3, ico:'target', n:'Overloaded',       req:'15 working-weight increases',    t:s => s.prs >= 15 },
+  { id:'load100',   cat:3, ico:'peak',   n:'Plus One Hundred', req:'+100 lbs of load added',         t:s => s.loadAdded >= 100 },
+  { id:'weighIn',   cat:3, ico:'scale',  n:'Weigh In',         req:'Log your bodyweight 15 times',   t:s => s.bwCount >= 15 },
+  { id:'recomp',    cat:3, ico:'scale',  n:'Recomposition',    req:'Drop 5 lbs of bodyweight while adding 50 lbs of load', t:s => s.bwDelta <= -5 && s.loadAdded >= 50 },
+  { id:'pr50',      cat:3, ico:'target', n:'Never Satisfied',  req:'50 working-weight increases',    t:s => s.prs >= 50 },
+  { id:'load500',   cat:3, ico:'peak',   n:'Plus Five Hundred',req:'+500 lbs of load added',         t:s => s.loadAdded >= 500 },
 ];
+
+/* Flatten consistency + strength into the shape the tests above expect. */
+export function earned(cs, st) {
+  const pcts = st.lifts.map(l => l.pct);
+  const flat = {
+    ...cs,
+    rankIdx: st.scored ? st.rank.i : 0,
+    scored: st.scored,
+    bestLift: st.lifts.reduce((a, l) => Math.max(a, l.rank.i), 0),
+    minPct: pcts.length ? Math.min(...pcts) : 0,
+    spread: pcts.length ? Math.max(...pcts) - Math.min(...pcts) : 999,
+    maxRatio: st.lifts.reduce((a, l) => Math.max(a, l.ratio), 0),
+    allLogged: st.totalScorable > 0 && st.scored >= st.totalScorable,
+  };
+  return new Set(BADGES.filter(b => b.t(flat)).map(b => b.id));
+}
 
 /* ═══════════════════ DATES ═══════════════════ */
 const dOf = ds => new Date(ds + 'T00:00:00');
@@ -130,7 +183,8 @@ export function strength() {
   const bw = load('bp_bw', []);
   const bodyweight = bw.length ? bw[bw.length - 1].w : null;
   const r = reps(), w = wts();
-  const out = { bodyweight, reps: r, lifts: [], unscored: [], overall: 0, rank: rankFor(0), scored: 0 };
+  const out = { bodyweight, reps: r, lifts: [], unscored: [], overall: 0, rank: rankFor(0),
+                scored: 0, totalScorable: Object.keys(LIFTS).length };
 
   Object.keys(w).forEach(name => {
     if (!LIFTS[name]) out.unscored.push({ name, w: w[name] });
@@ -206,6 +260,15 @@ export function stats() {
   let perfectWeeks = 0;
   weeks.forEach(set => { if (set.size >= WEEK_TARGET) perfectWeeks++; });
 
+  /* longest layoff between two logged sessions */
+  const days = [...new Set(log.map(e => e.d))].sort();
+  let maxGap = 0;
+  for (let i = 1; i < days.length; i++) {
+    const g = Math.round((dOf(days[i]) - dOf(days[i - 1])) / 86400000);
+    if (g > maxGap) maxGap = g;
+  }
+  const bwLog = load('bp_bw', []);
+
   const s = {
     log, prList: prs, hits, firstDate,
     sessions: log.length,
@@ -215,9 +278,10 @@ export function stats() {
     streak, best,
     weekDone: weeks.get(dateStr(weekStart(new Date())))?.size || 0,
     weekTarget: WEEK_TARGET,
-    perfectWeeks,
+    perfectWeeks, maxGap,
+    bwCount: bwLog.length,
+    bwDelta: bwLog.length >= 2 ? bwLog[bwLog.length - 1].w - bwLog[0].w : 0,
   };
-  s.badges = new Set(BADGES.filter(b => b.t(s)).map(b => b.id));
   return s;
 }
 
@@ -234,7 +298,7 @@ export function snapshot() {
     rankIdx: st.rank.i,
     rank: st.rank,
     lifts: new Map(st.lifts.map(l => [l.name, { i: l.rank.i, rank: l.rank }])),
-    badges: cs.badges,
+    badges: earned(cs, st),
   };
 }
 
@@ -284,13 +348,18 @@ export function delSession(d, di) {
 }
 
 /* ═══════════════════ CELEBRATION ═══════════════════ */
+/* Twelve sparks on fixed angles — deterministic, so it looks composed
+   rather than random, and it only ever fires on a rank-up or unlock. */
+const BURST = Array.from({ length: 12 }, (_, i) =>
+  `<i style="--a:${i * 30}deg;--d:${58 + (i % 3) * 22}px;--t:${(i % 4) * 40}ms"></i>`).join('');
+
 export function celebrationHTML(r) {
   if (!r || (!r.rankUp && !r.tierUps?.length && !r.badges?.length)) return null;
   let h = '';
   if (r.rankUp) {
     h += `<div class="lv-rank" style="--rc:var(${r.rankUp.c})">
       <div class="lv-kicker">Rank Up</div>
-      <div class="lv-letter">${r.rankUp.l}</div>
+      <div class="lv-letter"><span class="lv-burst">${BURST}</span>${r.rankUp.l}</div>
       <div class="lv-rank-n">${r.rankUp.name}</div>
       <div class="lv-rank-sub">${r.rankUp.blurb}</div>
     </div>`;
@@ -328,7 +397,7 @@ function bandTrack(pct, showLabels) {
   ).join('');
   return `<div class="rk-track">
     <div class="rk-segs">${segs}</div>
-    <div class="rk-marker" style="left:${Math.max(0.4, Math.min(99.6, pct))}%"></div>
+    <div class="rk-marker" data-pos="${Math.max(0.4, Math.min(99.6, pct)).toFixed(2)}" style="left:0"></div>
   </div>`;
 }
 
@@ -377,7 +446,7 @@ function heroHTML(st) {
     ${bandTrack(st.overall, true)}
     <div class="rk-hero-foot">
       <span>${nx ? `Next: <b>${nx.l} · ${nx.name}</b> at the ${nx.min}th percentile` : 'Off the top of the published data.'}</span>
-      <span class="rk-foot-pct">${st.overall.toFixed(1)}</span>
+      <span class="rk-foot-pct" data-cnt="${st.overall.toFixed(1)}" data-dec="1">0.0</span>
     </div>
   </div>`;
 }
@@ -471,7 +540,7 @@ function heatmapHTML(s) {
       else if (s.firstDate && ds >= s.firstDate) cls = 'miss',   tip = `${fmtD(ds)} · missed`;
       else                                       cls = 'pre',    tip = fmtD(ds);
       if (ds === today) cls += ' today';
-      cells += `<div class="pg-hm-c ${cls}" style="grid-row:${r + 1};grid-column:${c + 1}" title="${tip}"></div>`;
+      cells += `<div class="pg-hm-c ${cls}" style="grid-row:${r + 1};grid-column:${c + 1};--c:${c}" title="${tip}"></div>`;
     }
   }
   return `<div class="pg-card">
@@ -488,9 +557,10 @@ function heatmapHTML(s) {
   </div>`;
 }
 
-function tile(label, value, unit, sub) {
+function tile(label, value, unit, sub, cnt) {
+  const v = cnt ? `<span data-cnt="${cnt}" data-fmt="n">0</span>` : value;
   return `<div class="bw-stat">
-    <div class="bw-stat-v">${value}${unit ? `<span class="bw-stat-u">${unit}</span>` : ''}</div>
+    <div class="bw-stat-v">${v}${unit ? `<span class="bw-stat-u">${unit}</span>` : ''}</div>
     <div class="bw-stat-l">${label}</div>
     <div class="bw-stat-d ${sub ? 'up' : 'flat'}">${sub || '·'}</div>
   </div>`;
@@ -509,8 +579,8 @@ function nextUpHTML(s) {
 }
 
 function progressionHTML(s) {
-  const feed = [...s.prList].reverse().slice(0, 8).map(p => `
-    <div class="pg-pr">
+  const feed = [...s.prList].reverse().slice(0, 8).map((p, i) => `
+    <div class="pg-pr" style="--i:${i}">
       <div class="pg-pr-ex">${p.ex}</div>
       <div class="pg-pr-w"><span class="pg-pr-from">${p.from}</span> → ${p.to} <span class="pg-pr-u">lbs</span></div>
       <div class="pg-pr-up">+${(((p.to - p.from) / p.from) * 100).toFixed(0)}%</div>
@@ -527,7 +597,7 @@ function progressionHTML(s) {
   return `<div class="pg-card">
     <div class="pg-card-head"><div class="pg-card-title">Progression</div><div class="pg-card-note">${s.prs} weight ${s.prs === 1 ? 'increase' : 'increases'}</div></div>
     <div class="pg-big">
-      <div class="pg-big-v">+${fmtN(s.loadAdded)}<span class="pg-big-u">lbs</span></div>
+      <div class="pg-big-v">+<span data-cnt="${s.loadAdded}" data-fmt="n">0</span><span class="pg-big-u">lbs</span></div>
       <div class="pg-big-l">Total load added across every lift</div>
       ${bwLine ? `<div class="pg-big-note">${bwLine}</div>` : ''}
     </div>
@@ -536,17 +606,28 @@ function progressionHTML(s) {
   </div>`;
 }
 
-function badgesHTML(s) {
-  const cell = (b, on) => `<div class="pg-b ${on ? 'on' : ''}">
+function badgesHTML(ach) {
+  const cell = (b, on, i) => `<div class="pg-b ${on ? 'on' : ''}" style="--i:${i}">
     <div class="pg-b-ico ${on ? 'on' : ''}">${svg(b.ico)}</div>
     <div class="pg-b-n">${b.n}</div>
     <div class="pg-b-r">${on ? 'Unlocked' : b.req}</div>
   </div>`;
-  const got = BADGES.filter(b => s.badges.has(b.id));
-  const left = BADGES.filter(b => !s.badges.has(b.id));
+
+  let i = 0;
+  const groups = CATS.map((title, ci) => {
+    const all = BADGES.filter(b => b.cat === ci);
+    const got = all.filter(b => ach.has(b.id));
+    /* earned first inside each group, so progress reads top-down */
+    const ordered = [...got, ...all.filter(b => !ach.has(b.id))];
+    return `<div class="pg-b-group">
+      <div class="pg-b-gt"><span>${title}</span><span class="pg-b-gc ${got.length === all.length ? 'full' : ''}">${got.length}/${all.length}</span></div>
+      <div class="pg-b-grid">${ordered.map(b => cell(b, ach.has(b.id), i++)).join('')}</div>
+    </div>`;
+  }).join('');
+
   return `<div class="pg-card">
-    <div class="pg-card-head"><div class="pg-card-title">Milestones</div><div class="pg-card-note">${got.length}/${BADGES.length}</div></div>
-    <div class="pg-b-grid">${[...got.map(b => cell(b, true)), ...left.map(b => cell(b, false))].join('')}</div>
+    <div class="pg-card-head"><div class="pg-card-title">Achievements</div><div class="pg-card-note">${ach.size}/${BADGES.length}</div></div>
+    ${groups}
   </div>`;
 }
 
@@ -568,25 +649,61 @@ function historyHTML(s) {
   </div>`;
 }
 
+const CALM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* Skip the animated path entirely when it can't be seen: a hidden tab never
+   fires requestAnimationFrame, which would leave counters reading zero. */
+const SKIP_FX = () => CALM() || document.hidden;
+
+/* Count numbers up from zero. Cheap, once per render, and skipped entirely
+   when the OS asks for reduced motion. */
+function tickCounts(scope) {
+  scope.querySelectorAll('[data-cnt]').forEach(el => {
+    const to = parseFloat(el.dataset.cnt);
+    const dec = +(el.dataset.dec || 0);
+    const fmt = v => el.dataset.fmt === 'n' ? Math.round(v).toLocaleString('en-US') : v.toFixed(dec);
+    if (!isFinite(to) || to <= 0) { el.textContent = fmt(to || 0); return; }
+    if (SKIP_FX()) { el.textContent = fmt(to); return; }
+    const t0 = performance.now(), dur = 650;
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur);
+      el.textContent = fmt(to * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+/* Markers render at 0 and transition out to their real percentile, so the
+   bars read as filling toward where you actually are. */
+function slideMarkers(scope) {
+  scope.querySelectorAll('.rk-marker[data-pos]').forEach(el => {
+    const to = el.dataset.pos + '%';
+    if (SKIP_FX()) { el.style.left = to; return; }
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.style.left = to; }));
+  });
+}
+
 export function renderRank(root) {
   const p = root.querySelector('#p-rank');
   if (!p) return;
-  const st = strength(), s = stats();
+  const st = strength(), s = stats(), ach = earned(s, st);
 
   let h = heroHTML(st);
   h += verseHTML();
   h += verdictHTML(st);
   h += `<div class="bw-stats pg-tiles">
-    ${tile('Streak', s.streak, s.streak === 1 ? 'day' : 'days', s.streak && s.streak === s.best ? 'personal best' : '')}
-    ${tile('Best', s.best, s.best === 1 ? 'day' : 'days', '')}
+    ${tile('Streak', s.streak, s.streak === 1 ? 'day' : 'days', s.streak && s.streak === s.best ? 'personal best' : '', s.streak)}
+    ${tile('Best', s.best, s.best === 1 ? 'day' : 'days', '', s.best)}
     ${tile('This Week', `${s.weekDone}/${s.weekTarget}`, '', s.weekDone >= s.weekTarget ? 'perfect' : '')}
-    ${tile('Sessions', fmtN(s.sessions), '', s.sets ? `${fmtN(s.sets)} sets` : '')}
+    ${tile('Sessions', fmtN(s.sessions), '', s.sets ? `${fmtN(s.sets)} sets` : '', s.sessions)}
   </div>`;
   h += `<div class="pg-card rk-next"><span class="pg-kicker">Next Session</span><div>${nextUpHTML(s)}</div></div>`;
   h += liftsHTML(st);
   h += heatmapHTML(s);
   h += progressionHTML(s);
-  h += badgesHTML(s);
+  h += badgesHTML(ach);
   h += historyHTML(s);
   p.innerHTML = h;
+  tickCounts(p);
+  slideMarkers(p);
 }

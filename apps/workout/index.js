@@ -111,8 +111,16 @@ function paintDayHead(di, tally) {
   const comp = tally.done === tally.tot && tally.tot > 0;
   const prog = card.querySelector('.day-prog');
   if (prog) {
+    const wasDone = prog.classList.contains('done');
     prog.textContent = `${tally.done}/${tally.tot}`;
     prog.classList.toggle('done', comp);
+    /* finishing a day is a real moment — flash the card once for it */
+    if (comp && !wasDone) {
+      card.classList.remove('just-done');
+      void card.offsetWidth;
+      card.classList.add('just-done');
+      card.addEventListener('animationend', () => card.classList.remove('just-done'), { once: true });
+    }
   }
   const right = card.querySelector('.day-top-r');
   const pill = right?.querySelector('.day-xp');
