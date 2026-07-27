@@ -18,13 +18,19 @@
 /* ── Day / exercise rows ── */
 .wk .day-badge.mon{background:var(--blue)}.wk .day-badge.tue{background:var(--purple)}.wk .day-badge.thu{background:var(--amber)}.wk .day-badge.fri{background:var(--red)}
 .wk .day-badge.bw{background:var(--green)}.wk .day-badge.hist{background:var(--purple)}
-.wk .day-prog{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text-3);padding:3px 10px;border-radius:20px;background:var(--bg);border:1px solid var(--border);transition:all .3s}
-.wk .day-prog.done{color:var(--green);border-color:var(--green-d);background:var(--green-d)}
+.wk .day-prog{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-3);padding:3px 9px;border-radius:2px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--border);transition:all .3s}
+.wk .day-prog.done{color:var(--green);background:var(--green-d);box-shadow:inset 0 0 0 1px var(--green)}
 .wk .day-body{padding:4px 0}
 .wk .sec-lbl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);padding:12px 16px 4px}
 
-.wk .ex-row{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:10px 16px;transition:background .12s;cursor:pointer}
+.wk .ex-row{position:relative;display:grid;grid-template-columns:26px 20px 1fr auto;align-items:center;gap:9px;
+  padding:10px 16px 10px 18px;transition:background .12s;cursor:pointer}
 .wk .ex-row:hover{background:var(--bg-hover)}
+/* left rail lights up when the row is done — quest-list language */
+.wk .ex-rail{position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--border-lt);transition:background .25s ease}
+.wk .ex-row.off .ex-rail{background:var(--green)}
+.wk .ex-idx{font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--text-3);letter-spacing:.5px;text-align:center;transition:color .25s ease}
+.wk .ex-row.off .ex-idx{color:var(--green)}
 .wk .ex-chk{width:20px;height:20px;border-radius:5px;border:2px solid var(--border-lt);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;background:transparent}
 .wk .ex-chk:hover{border-color:var(--blue)}
 .wk .ex-chk.on{background:var(--blue);border-color:var(--blue)}
@@ -40,9 +46,11 @@
 .wk .ex-detail{display:flex;align-items:center;gap:6px;margin-top:2px}
 .wk .ex-musc{font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
 .wk .ex-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.wk .ex-sets{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text-2);background:var(--bg);padding:3px 8px;border-radius:4px;white-space:nowrap}
-.wk .ex-wt{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--green);background:var(--green-d);padding:3px 7px;border-radius:4px;white-space:nowrap}
-.wk .bench-tag{font-size:10px;font-weight:600;padding:3px 7px;border-radius:4px;white-space:nowrap}
+.wk .ex-sets{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--text-2);background:var(--bg);padding:3px 8px;border-radius:2px;white-space:nowrap}
+.wk .ex-wt{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--green);background:var(--green-d);
+  padding:3px 7px;border-radius:2px;white-space:nowrap;box-shadow:inset 0 0 0 1px var(--green-d)}
+.wk .ex-wt::after{content:' lb';font-size:8px;font-weight:600;opacity:.6}
+.wk .bench-tag{font-size:9.5px;font-weight:700;letter-spacing:.3px;padding:3px 7px;border-radius:2px;white-space:nowrap}
 .wk .bench-flat,.wk .bench-55{background:var(--blue-d);color:var(--blue)}.wk .bench-30{background:var(--red-d);color:var(--pink)}.wk .bench-85{background:var(--green-d);color:var(--amber)}
 .wk .grip{background:var(--blue-d);color:var(--purple)}
 /* A finished row dims but stays legible — the ticked box is the real signal,
@@ -58,7 +66,10 @@
 /* ── Muscle modal ── */
 .mm-overlay{position:fixed;inset:0;background:var(--ol-bg);backdrop-filter:blur(16px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
 .mm-overlay.on{opacity:1;pointer-events:all}
-.mm-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;animation:mm-in .25s ease}
+.mm-card{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:13px;
+  box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  width:100%;max-width:420px;max-height:90vh;overflow-y:auto;animation:mm-in .25s ease}
 @keyframes mm-in{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 .mm-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
 .mm-title{font-size:16px;font-weight:700}
@@ -91,7 +102,10 @@
 
 /* ── Bodyweight tab ── */
 .bw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-.bw-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rs);padding:11px 6px 9px;text-align:center;position:relative;overflow:hidden}
+.bw-stat{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:7px;
+  box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  padding:11px 6px 9px;text-align:center;overflow:hidden}
 .bw-stat-v{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--text);line-height:1.1;letter-spacing:-.5px}
 .bw-stat-u{font-size:10px;color:var(--text-3);font-weight:500;margin-left:1px}
 .bw-stat-l{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);margin-top:5px}
@@ -100,7 +114,10 @@
 .bw-stat-d.dn{color:var(--red)}
 .bw-stat-d.flat{color:var(--text-3)}
 
-.bw-chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px 14px 6px;margin-bottom:14px}
+.bw-chart-card{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:11px;
+  box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  padding:14px 14px 6px;margin-bottom:14px}
 .bw-chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap}
 .bw-chart-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
 .bw-range{display:flex;gap:3px}
@@ -148,7 +165,10 @@
 .wk .day-xp.logged{color:var(--green);background:var(--green-d);padding:3px 8px;border-radius:4px}
 
 /* ── shared card shell ── */
-.pg-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.pg-card{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:11px;
+  box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  padding:14px;margin-bottom:14px}
 .pg-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:12px}
 .pg-card-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
 .pg-card-note{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--text-3);white-space:nowrap}
@@ -156,13 +176,23 @@
 .pg-empty{padding:20px 4px;text-align:center;color:var(--text-3);font-size:12.5px;line-height:1.5}
 
 /* ── rank hero (strength-derived) ── */
-.rk-hero{position:relative;overflow:hidden;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.rk-hero{position:relative;overflow:hidden;background:var(--bg-card);border:none;border-radius:0;--n:14px;
+  box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  padding:16px;margin-bottom:14px}
 .rk-hero::before{content:'';position:absolute;inset:0 0 auto 0;height:2px;background:var(--rc)}
 .rk-scan{display:none}
 .rk-hero-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .rk-kicker{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
 .rk-hero-row{display:flex;align-items:center;gap:16px}
-.rk-letter{font-family:var(--mono);font-size:62px;font-weight:700;line-height:.9;color:var(--rc);letter-spacing:-3px;flex-shrink:0;min-width:64px;text-align:center}
+/* hexagonal emblem: outer shape is the rank colour, inner inset punches it
+   back to the card colour, leaving a 2px ring around the letter */
+.rk-badge{position:relative;width:78px;height:88px;flex-shrink:0;display:grid;place-items:center;background:var(--rc);
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.rk-badge::before{content:'';position:absolute;inset:2px;background:var(--bg-card);
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.rk-letter{position:relative;z-index:1;font-family:var(--mono);font-size:40px;font-weight:700;line-height:1;
+  color:var(--rc);letter-spacing:-2px;text-align:center}
 .rk-hero-txt{min-width:0}
 .rk-name{font-size:18px;font-weight:700;letter-spacing:-.2px}
 .rk-pct{font-size:12.5px;color:var(--text-2);margin-top:4px}
@@ -176,7 +206,10 @@
 /* ── percentile band track: widths are to scale, so it's obvious how wide
       "average" is and how narrow "elite" is ── */
 .rk-track{position:relative;margin-top:14px;padding-bottom:2px}
-.rk-segs{display:flex;height:16px;border-radius:4px;overflow:hidden;gap:1px}
+.rk-segs{position:relative;display:flex;height:16px;border-radius:0;overflow:hidden;gap:1px}
+/* hairlines every 5% so the bar reads as chunked rather than a smooth fill */
+.rk-segs::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0,transparent calc(5% - 1px),#00000059 calc(5% - 1px),#00000059 5%)}
 .rk-seg{position:relative;display:flex;align-items:center;justify-content:center;opacity:.3;min-width:0;transition:opacity .2s}
 .rk-seg span{font-family:var(--mono);font-size:8.5px;font-weight:700;color:#000;opacity:.75}
 .rk-marker{position:absolute;top:-4px;width:3px;height:24px;border-radius:2px;background:var(--text);
@@ -279,8 +312,11 @@
 .pg-b-gc{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text-3)}
 .pg-b-gc.full{color:var(--green)}
 .pg-b-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.pg-b{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:12px 8px;text-align:center;opacity:.55;transition:all .2s}
-.pg-b.on{opacity:1;border-color:var(--green-d);background:var(--green-d)}
+.pg-b{position:relative;background:var(--bg);border:none;border-radius:0;--n:7px;
+  box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  padding:12px 8px;text-align:center;opacity:.5;transition:all .2s}
+.pg-b.on{opacity:1;background:var(--green-d);box-shadow:inset 0 0 0 1px var(--green)}
 .pg-b-ico{width:30px;height:30px;margin:0 auto 8px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-3);display:flex;align-items:center;justify-content:center}
 .pg-b-ico.on{background:var(--green-d);border-color:var(--green);color:var(--green)}
 .pg-b-ico svg{width:16px;height:16px}
@@ -309,11 +345,22 @@
 /* ── rank-up / milestone celebration ── */
 .lv-overlay{position:fixed;inset:0;background:var(--ol-bg);backdrop-filter:blur(16px);z-index:250;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
 .lv-overlay.on{opacity:1;pointer-events:all}
-.lv-card{background:var(--bg-card);border:1px solid var(--border-lt);border-radius:14px;width:100%;max-width:340px;padding:26px 22px 20px;text-align:center;animation:lv-in .4s cubic-bezier(.22,.68,0,1.1)}
+.lv-card{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:13px;
+  box-shadow:inset 0 0 0 1px var(--border-lt);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  width:100%;max-width:340px;padding:26px 22px 20px;text-align:center;animation:lv-in .4s cubic-bezier(.22,.68,0,1.1)}
 @keyframes lv-in{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
 .lv-kicker{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text-3)}
 .lv-kicker.mid{margin-top:20px;padding-top:18px;border-top:1px solid var(--border)}
-.lv-letter{position:relative;font-family:var(--mono);font-size:64px;font-weight:700;line-height:.95;color:var(--rc);letter-spacing:-4px;margin-top:8px}
+.lv-letter{position:relative;display:flex;justify-content:center;margin-top:10px}
+.lv-badge-hex{position:relative;display:grid;place-items:center;width:92px;height:104px;background:var(--rc);
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.lv-badge-hex::before{content:'';position:absolute;inset:2px;background:var(--bg-card);
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+/* the letter must be a real child: the inset ::before is positioned and would
+   otherwise paint over plain text content */
+.lv-badge-hex>b{position:relative;z-index:1;font-family:var(--mono);font-size:44px;font-weight:700;
+  line-height:1;letter-spacing:-2px;color:var(--rc)}
 .lv-burst{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
 .lv-burst i{display:none;position:absolute;left:0;top:0;width:5px;height:5px;border-radius:50%;background:var(--rc)}
 .lv-rank-n{font-size:22px;font-weight:700;letter-spacing:-.4px;color:var(--rc);margin-top:2px;line-height:1.15}
@@ -331,8 +378,13 @@
 
 @media(max-width:480px){
   .wk .app-wrap{padding:16px 12px 100px}
-  .rk-letter{font-size:48px;min-width:48px;letter-spacing:-2px}
+  .rk-badge{width:66px;height:74px}
+  .rk-letter{font-size:32px;letter-spacing:-1.5px}
   .rk-hero-row{gap:12px}
+  .wk .ex-row{grid-template-columns:24px 17px 1fr auto;gap:7px;padding-left:14px}
+  .wk .ex-idx{font-size:9px}
+  .day-title{font-size:10.5px;letter-spacing:.8px}
+  .day-idx{font-size:13px}
   .rk-name{font-size:16px}
   .rk-verdict-w{grid-template-columns:1fr}
   .rk-reps{justify-content:space-between}

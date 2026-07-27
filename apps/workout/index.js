@@ -53,16 +53,27 @@ function renderProg() {
     day.sections.forEach((sec, si) => sec.ex.forEach((_, ei) => { tot++; if (ch[ek(di,si,ei)]) dn++; }));
     const comp = dn === tot && tot > 0;
     const xpH = comp && isLoggedToday(di) ? `<span class="day-xp logged">Logged</span>` : '';
-    h += `<div class="day-card" data-day="${di}"><div class="day-top"><div class="day-top-l"><span class="day-badge ${day.day}">${day.day}</span><span class="day-title">${day.label}</span></div><div class="day-top-r">${xpH}<span class="day-prog ${comp?'done':''}">${dn}/${tot}</span></div></div><div class="day-body">`;
+    h += `<div class="day-card" data-day="${di}">
+      <div class="day-top">
+        <div class="day-top-l">
+          <span class="day-idx">${pad(di + 1)}</span><span class="day-sep">//</span>
+          <span class="day-badge ${day.day}">${day.day}</span>
+          <span class="day-title">${day.label}</span>
+        </div>
+        <div class="day-top-r">${xpH}<span class="day-prog ${comp?'done':''}">${dn}/${tot}</span></div>
+      </div>
+      <div class="day-meter">${meterHTML(dn, tot)}</div>
+      <div class="day-body">`;
+    let exN = 0;                                   // numbering runs across the whole day
     day.sections.forEach((sec, si) => {
       if (sec.tag) h += `<div class="sec-lbl">${sec.tag}</div>`;
       sec.ex.forEach((rawEx, ei) => {
         const ex = resEx(rawEx);
         const k = ek(di,si,ei), on = ch[k] || false;
         const wv = w[ex.n];
-        const wtH = wv ? `<span class="ex-wt">${wv} lbs</span>` : '';
+        const wtH = wv ? `<span class="ex-wt">${wv}</span>` : '';
         const bH  = ex.b ? `<span class="bench-tag ${ex.bc||''}">${ex.b}</span>` : '';
-        h += `<div class="ex-row ${on?'off':''}" data-act="row" data-di="${di}" data-si="${si}" data-ei="${ei}"><div class="ex-chk ${on?'on':''}" data-act="chk" data-k="${k}"></div><div class="ex-body"><div class="ex-name">${ex.n}</div><div class="ex-detail"><span class="ex-musc">${ex.m}</span></div></div><div class="ex-right">${wtH}<span class="ex-sets">${ex.s}</span>${bH}</div></div>`;
+        h += `<div class="ex-row ${on?'off':''}" data-act="row" data-di="${di}" data-si="${si}" data-ei="${ei}"><span class="ex-rail"></span><div class="ex-chk ${on?'on':''}" data-act="chk" data-k="${k}"></div><span class="ex-idx">${pad(++exN)}</span><div class="ex-body"><div class="ex-name">${ex.n}</div><div class="ex-detail"><span class="ex-musc">${ex.m}</span></div></div><div class="ex-right">${wtH}<span class="ex-sets">${ex.s}</span>${bH}</div></div>`;
       });
     });
     h += `</div></div>`;
@@ -70,6 +81,12 @@ function renderProg() {
   if (Object.values(ch).some(Boolean)) h += `<div class="clear-bar"><button class="clear-btn" data-act="clear">Clear All Checkmarks</button></div>`;
   p.innerHTML = h;
 }
+
+const pad = n => String(n).padStart(2, '0');
+
+/* Segmented completion meter — one notch per exercise, reads like a HUD bar. */
+const meterHTML = (done, tot) =>
+  Array.from({ length: tot }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join('');
 
 /* Completed exercises + hard sets for one day, under the current bar setting. */
 function dayTally(di, ch) {
@@ -109,6 +126,9 @@ function paintDayHead(di, tally) {
   const card = q(`.day-card[data-day="${di}"]`);
   if (!card) return;
   const comp = tally.done === tally.tot && tally.tot > 0;
+  /* toggle the existing notches rather than rebuilding them, so they
+     transition instead of snapping */
+  card.querySelectorAll('.day-meter i').forEach((el, i) => el.classList.toggle('on', i < tally.done));
   const prog = card.querySelector('.day-prog');
   if (prog) {
     const wasDone = prog.classList.contains('done');

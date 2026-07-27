@@ -100,7 +100,10 @@
 /* ── Settings modal ── */
 .sx-overlay{position:fixed;inset:0;background:var(--ol-bg);backdrop-filter:blur(16px);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
 .sx-overlay.on{opacity:1;pointer-events:all}
-.sx-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;width:100%;max-width:440px;animation:sx-in .22s ease}
+.sx-card{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:14px;
+  box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  width:100%;max-width:440px;animation:sx-in .22s ease}
 @keyframes sx-in{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
 .sx-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
 .sx-title{font-size:16px;font-weight:700}
@@ -113,9 +116,10 @@
 
 /* ── theme picker ── */
 .sx-themes{display:flex;flex-direction:column;gap:8px}
-.sx-theme{display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;
-  background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;
-  font-family:var(--font);color:var(--text);transition:all .15s}
+.sx-theme{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;
+  background:var(--bg);border:none;border-radius:0;--n:8px;box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  padding:11px 13px;font-family:var(--font);color:var(--text);transition:all .15s}
 .sx-theme:hover{background:var(--bg-hover);border-color:var(--border-lt)}
 .sx-theme.sel{border-color:var(--sel-bd);background:var(--blue-d)}
 .sx-sw{display:flex;gap:3px;flex-shrink:0}
@@ -128,8 +132,10 @@
 .sx-theme.sel .sx-tick::after{content:'';position:absolute;left:5px;top:3px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
 
 /* ── labelled setting row + segmented control ── */
-.sx-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px 13px}
+.sx-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  background:var(--bg);border:none;border-radius:0;--n:8px;box-shadow:inset 0 0 0 1px var(--border);
+  clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+  padding:12px 13px}
 .sx-row-t{font-size:13.5px;font-weight:600}
 .sx-row-s{font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.4}
 .sx-seg{display:flex;gap:3px;flex-shrink:0}
@@ -147,4 +153,5 @@
 .sx-btn{flex:1;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:var(--font);font-size:13.5px;font-weight:600;padding:12px;border-radius:var(--rs);cursor:pointer;transition:all .15s}
 .sx-btn:hover{background:var(--bg-hover);border-color:var(--border-lt)}
 .sx-btn.pri{background:var(--blue);border-color:transparent;color:#fff}
+
 .sx-btn.pri:hover{background:var(--btn-hover)}

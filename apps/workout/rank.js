@@ -359,7 +359,7 @@ export function celebrationHTML(r) {
   if (r.rankUp) {
     h += `<div class="lv-rank" style="--rc:var(${r.rankUp.c})">
       <div class="lv-kicker">Rank Up</div>
-      <div class="lv-letter"><span class="lv-burst">${BURST}</span>${r.rankUp.l}</div>
+      <div class="lv-letter"><span class="lv-burst">${BURST}</span><span class="lv-badge-hex"><b>${r.rankUp.l}</b></span></div>
       <div class="lv-rank-n">${r.rankUp.name}</div>
       <div class="lv-rank-sub">${r.rankUp.blurb}</div>
     </div>`;
@@ -414,7 +414,7 @@ function heroHTML(st) {
   if (!st.bodyweight) {
     return `<div class="rk-hero" style="--rc:var(--text-3)"><span class="rk-scan"></span>
       <div class="rk-kicker">No Rank</div>
-      <div class="rk-hero-row"><div class="rk-letter">?</div>
+      <div class="rk-hero-row"><div class="rk-badge"><span class="rk-letter">?</span></div>
         <div class="rk-hero-txt"><div class="rk-name">Bodyweight missing</div>
         <div class="rk-blurb">Strength standards are relative to bodyweight. Log yours in the <b>Weight</b> tab and this fills in immediately.</div></div></div>
     </div>`;
@@ -422,7 +422,7 @@ function heroHTML(st) {
   if (!st.scored) {
     return `<div class="rk-hero" style="--rc:var(--text-3)"><span class="rk-scan"></span>
       <div class="rk-kicker">No Rank</div>
-      <div class="rk-hero-row"><div class="rk-letter">?</div>
+      <div class="rk-hero-row"><div class="rk-badge"><span class="rk-letter">?</span></div>
         <div class="rk-hero-txt"><div class="rk-name">No weights logged</div>
         <div class="rk-blurb">Tap any exercise in the <b>Program</b> tab and set its working weight. Rank is computed from what you actually lift — nothing else moves it.</div></div></div>
     </div>`;
@@ -436,7 +436,7 @@ function heroHTML(st) {
       <div class="rk-kicker">${st.scored} lift${st.scored === 1 ? '' : 's'} scored · ${st.bodyweight} lb bodyweight</div>
     </div>
     <div class="rk-hero-row">
-      <div class="rk-letter">${rk.l}</div>
+      <div class="rk-badge"><span class="rk-letter">${rk.l}</span></div>
       <div class="rk-hero-txt">
         <div class="rk-name">${rk.name}</div>
         <div class="rk-pct">Stronger than <b>${beat}%</b> of lifters at your bodyweight</div>
