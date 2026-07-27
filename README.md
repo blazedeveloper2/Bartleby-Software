@@ -10,6 +10,9 @@ Live apps:
   **Rank** tab: a letter grade (F→SS) computed from your working weights
   against published population strength standards relative to your bodyweight,
   plus streaks, a consistency heatmap, milestones and a daily verse.
+  Every weighted lift in the program is scored; each one is tagged with how
+  trustworthy its standard is (exact match / proxy movement / estimate).
+  See `apps/workout/standards.js` for the data and its sources.
 - **Finance** — expense tracker: log spending by category (add/delete your own
   categories) with a calendar date picker and notes, a filterable history with
   tap-to-view details, and Insights (category donut + jump-to-any month/year +

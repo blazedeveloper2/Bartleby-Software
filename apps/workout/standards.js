@@ -1,48 +1,74 @@
 /* ═══════════════════════════════════════════════════════════
    STRENGTH STANDARDS + DAILY SCRIPTURE
 
-   RATIOS below are Strength Level's male standards, expressed as
-   (1RM of a SINGLE dumbbell) ÷ bodyweight, for the five tiers:
+   LIFTS holds one entry per weighted exercise in the program:
 
-     [Beginner, Novice, Intermediate, Advanced, Elite]
-
-   Those tiers sit at roughly the 5th / 20th / 50th / 80th / 95th
-   percentile of everyone who logs that lift at your bodyweight —
-   that's what makes a percentile score possible at all.
+     r     five bodyweight-ratio anchors, in order
+             [Beginner, Novice, Intermediate, Advanced, Elite]
+           which sit at roughly the 5th / 20th / 50th / 80th / 95th
+           percentile of everyone logging that lift at your bodyweight.
+     src   how much to trust it:
+             'exact'  published standard for this exact movement
+             'proxy'  scored on the closest published movement
+             'est'    no published data; converted from a related
+                      barbell lift with the stated rule
+     mult  logged weight × this = the weight the standard refers to
+           (default 1 = one dumbbell, which is how the source measures)
+     mode  'added' → the logged number is weight ADDED to bodyweight
+     base  which published movement the numbers came from
 
    Source: https://strengthlevel.com/strength-standards (per-lift
    pages, lb, male, "Bodyweight Ratio" table). Retrieved Jul 2026
-   from datasets of ~1–5M logged lifts per exercise.
+   from datasets of ~0.2–5M logged lifts per exercise.
 
-   Only lifts with a published standard are listed. Anything absent
-   is shown as unscored rather than guessed at — an invented
-   standard would quietly corrupt the overall rank.
+   Bodyweight-only core work (planks, dead bugs, knee raises) takes no
+   load, so there is nothing to score and nothing published to score
+   it against. Those simply never appear here.
    ═══════════════════════════════════════════════════════════ */
 
-export const RATIOS = {
-  'Incline Dumbbell Press':      [0.25, 0.35, 0.50, 0.65, 0.85],
-  'Dumbbell Bench Press':        [0.20, 0.35, 0.50, 0.70, 0.90],
-  'Dumbbell Shoulder Press':     [0.15, 0.25, 0.40, 0.55, 0.70],
-  'Dumbbell Flyes':              [0.10, 0.20, 0.30, 0.45, 0.60],
-  'Overhead Tricep Extensions':  [0.05, 0.15, 0.25, 0.45, 0.60],
-  'Lateral Raises':              [0.05, 0.10, 0.20, 0.30, 0.45],
-  'Reverse Flyes':               [0.05, 0.10, 0.20, 0.35, 0.55],
-  'Hammer Curls':                [0.10, 0.20, 0.30, 0.40, 0.55],
-  'Dumbbell Pullovers':          [0.15, 0.30, 0.45, 0.65, 0.85],
-  'Single-Arm Rows':             [0.20, 0.35, 0.55, 0.75, 1.00],
-  'Chest-Supported Rows':        [0.20, 0.35, 0.55, 0.75, 1.00],
-  'Romanian Deadlifts':          [0.20, 0.35, 0.55, 0.80, 1.05],
-  'Heel-Elevated Goblet Squats': [0.20, 0.35, 0.55, 0.75, 1.05],
-  'Bulgarian Split Squats':      [0.15, 0.25, 0.40, 0.60, 0.85],
+export const LIFTS = {
+  /* ── published standard for the exact movement ── */
+  'Incline Dumbbell Press':      { r:[0.25,0.35,0.50,0.65,0.85], src:'exact', base:'Incline dumbbell bench press' },
+  'Dumbbell Bench Press':        { r:[0.20,0.35,0.50,0.70,0.90], src:'exact', base:'Dumbbell bench press' },
+  'Dumbbell Shoulder Press':     { r:[0.15,0.25,0.40,0.55,0.70], src:'exact', base:'Dumbbell shoulder press' },
+  'Dumbbell Flyes':              { r:[0.10,0.20,0.30,0.45,0.60], src:'exact', base:'Dumbbell fly' },
+  'Overhead Tricep Extensions':  { r:[0.05,0.15,0.25,0.45,0.60], src:'exact', base:'Dumbbell tricep extension' },
+  'Lateral Raises':              { r:[0.05,0.10,0.20,0.30,0.45], src:'exact', base:'Dumbbell lateral raise' },
+  'Reverse Flyes':               { r:[0.05,0.10,0.20,0.35,0.55], src:'exact', base:'Dumbbell reverse fly' },
+  'Hammer Curls':                { r:[0.10,0.20,0.30,0.40,0.55], src:'exact', base:'Hammer curl' },
+  'Incline Curls':               { r:[0.10,0.15,0.25,0.35,0.45], src:'exact', base:'Incline dumbbell curl' },
+  'Dumbbell Pullovers':          { r:[0.15,0.30,0.45,0.65,0.85], src:'exact', base:'Dumbbell pullover' },
+  'Single-Arm Rows':             { r:[0.20,0.35,0.55,0.75,1.00], src:'exact', base:'Dumbbell row' },
+  'Romanian Deadlifts':          { r:[0.20,0.35,0.55,0.80,1.05], src:'exact', base:'Dumbbell Romanian deadlift' },
+  'Bulgarian Split Squats':      { r:[0.15,0.25,0.40,0.60,0.85], src:'exact', base:'Dumbbell Bulgarian split squat' },
+  'Standing Calf Raises':        { r:[0.10,0.25,0.45,0.75,1.10], src:'exact', base:'Dumbbell calf raise' },
+
+  /* ── weighted pull-up: the standard is ADDED weight ÷ bodyweight,
+        and its Beginner anchor is negative (assisted) ── */
+  'Pull-Ups':                    { r:[-0.20,0.18,0.59,1.06,1.55], src:'exact', mode:'added', base:'Weighted pull-up',
+                                   note:'Logged weight is read as weight ADDED on a belt. Beginner is negative because that tier is still using assistance.' },
+
+  /* ── closest published movement ── */
+  'Chest-Supported Rows':        { r:[0.20,0.35,0.55,0.75,1.00], src:'proxy', base:'Dumbbell row',
+                                   note:'Chest-supported is the stricter variation, so this reads a little harsh.' },
+  'Heel-Elevated Goblet Squats': { r:[0.20,0.35,0.55,0.75,1.05], src:'proxy', base:'Goblet squat',
+                                   note:'Heel elevation makes the movement slightly easier than the published version.' },
+  'Preacher Curls':              { r:[0.10,0.15,0.25,0.35,0.45], src:'proxy', base:'Incline dumbbell curl',
+                                   note:'No dumbbell preacher-curl data exists. Incline curl is the closest published match — both are strict curls from a stretched position.' },
+
+  /* ── no published dumbbell data; converted from a barbell lift ── */
+  'B-Stance RDLs':               { r:[0.25,0.50,0.75,1.25,1.50], src:'est', mult:2, base:'Single-leg Romanian deadlift (barbell, total load)',
+                                   note:'Your two dumbbells are summed and compared with the single-leg barbell standard. A B-stance rear foot takes some of the load, so this reads generous.' },
+  'B-Stance Hip Thrusts':        { r:[0.25,0.63,0.88,1.38,1.88], src:'est', base:'Barbell hip thrust, halved for one-leg-dominant work',
+                                   note:'Barbell hip-thrust standards (0.50/1.25/1.75/2.75/3.75× bodyweight) halved, since a B-stance thrust loads roughly one leg. A rough estimate, not published data.' },
+  "Farmer's Carries":            { r:[0.20,0.35,0.50,0.70,0.95], src:'est', base:'None published',
+                                   note:'No strength standard exists for loaded carries — they are normally measured by distance or time, not a 1RM. These thresholds are a reasonable-effort estimate and the least trustworthy number on this page.' },
 };
 
-/* Rows are scored against plain dumbbell-row standards; chest-supported
-   is a stricter variation, so that score reads slightly harsh. Noted in
-   the UI rather than silently fudged. */
-export const NOTES = {
-  'Chest-Supported Rows': 'Scored on dumbbell-row standards — the chest-supported version is stricter, so this reads a little harsh.',
-  'Heel-Elevated Goblet Squats': 'Scored on goblet-squat standards.',
-};
+/* Back-compat alias: the ratio-only view of LIFTS. */
+export const RATIOS = Object.fromEntries(Object.entries(LIFTS).map(([k, v]) => [k, v.r]));
+
+export const SRC_LABEL = { exact:'', proxy:'Proxy', est:'Estimate' };
 
 /* Percentile anchors for the five tiers, used to interpolate a score. */
 export const TIER_PCT = [5, 20, 50, 80, 95];

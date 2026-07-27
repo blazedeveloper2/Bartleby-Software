@@ -118,7 +118,6 @@ html[data-theme="arcade"] .sx-bar-fill::after {
 
 /* ── the rank letter is the hero element: make it burn ── */
 html[data-theme="arcade"] .rk-letter { animation:ar-glow 3s ease-in-out infinite }
-html[data-theme="arcade"] .rk-hero::after { animation:ar-bloom 5s ease-in-out infinite }
 
 /* the band track lights up its segments and the marker burns */
 html[data-theme="arcade"] .rk-seg { opacity:.42 }

@@ -53,7 +53,7 @@ function renderProg() {
     day.sections.forEach((sec, si) => sec.ex.forEach((_, ei) => { tot++; if (ch[ek(di,si,ei)]) dn++; }));
     const comp = dn === tot && tot > 0;
     const xpH = comp && isLoggedToday(di) ? `<span class="day-xp logged">Logged</span>` : '';
-    h += `<div class="day-card"><div class="day-top"><div class="day-top-l"><span class="day-badge ${day.day}">${day.day}</span><span class="day-title">${day.label}</span></div><div class="day-top-r">${xpH}<span class="day-prog ${comp?'done':''}">${dn}/${tot}</span></div></div><div class="day-body">`;
+    h += `<div class="day-card" data-day="${di}"><div class="day-top"><div class="day-top-l"><span class="day-badge ${day.day}">${day.day}</span><span class="day-title">${day.label}</span></div><div class="day-top-r">${xpH}<span class="day-prog ${comp?'done':''}">${dn}/${tot}</span></div></div><div class="day-body">`;
     day.sections.forEach((sec, si) => {
       if (sec.tag) h += `<div class="sec-lbl">${sec.tag}</div>`;
       sec.ex.forEach((rawEx, ei) => {
@@ -81,14 +81,53 @@ function dayTally(di, ch) {
   return { tot, done, sets };
 }
 
+/* Patch the row and its day header in place. A full renderProg() here
+   would rebuild all four cards, which reads as a page-wide flicker and
+   restarts every card's entrance animation. */
 function toggleChk(k) {
   const c = chks(); c[k] = !c[k]; sChk(c);
+  const on = !!c[k];
   const di = +k.split('.')[0];
-  const res = syncDay(di, dayTally(di, c));
-  renderProg();
+
+  const box = q(`[data-act="chk"][data-k="${k}"]`);
+  if (box) {
+    box.classList.toggle('on', on);
+    box.closest('.ex-row')?.classList.toggle('off', on);
+  }
+  const tally = dayTally(di, c);
+  paintDayHead(di, tally);
+  paintClearBar(c);
+
+  const res = syncDay(di, tally);
   if (!res) return;
+  paintDayHead(di, tally);            // the "Logged" pill may have appeared
   renderRank(root);
   if (res.logged && !showCelebration(res)) toast(`${res.label} logged`);
+}
+
+function paintDayHead(di, tally) {
+  const card = q(`.day-card[data-day="${di}"]`);
+  if (!card) return;
+  const comp = tally.done === tally.tot && tally.tot > 0;
+  const prog = card.querySelector('.day-prog');
+  if (prog) {
+    prog.textContent = `${tally.done}/${tally.tot}`;
+    prog.classList.toggle('done', comp);
+  }
+  const right = card.querySelector('.day-top-r');
+  const pill = right?.querySelector('.day-xp');
+  const want = comp && isLoggedToday(di);
+  if (want && !pill) right.insertAdjacentHTML('afterbegin', '<span class="day-xp logged">Logged</span>');
+  else if (!want && pill) pill.remove();
+}
+
+/* The "Clear All" bar only exists when something is checked. */
+function paintClearBar(ch) {
+  const any = Object.values(ch).some(Boolean);
+  const bar = q('.clear-bar');
+  if (any && !bar) q('#p-program').insertAdjacentHTML('beforeend',
+    '<div class="clear-bar"><button class="clear-btn" data-act="clear">Clear All Checkmarks</button></div>');
+  else if (!any && bar) bar.remove();
 }
 function clearChk() { sChk({}); renderProg(); toast('Checkmarks cleared'); }
 
@@ -118,8 +157,14 @@ function openMM(ex) {
   const muscles = ex.m.replace(/\(.*?\)/g,'').split(',').map(s=>s.trim()).filter(Boolean);
   q('#mm-mlist').innerHTML = muscles.map(m => `<span class="mm-muscle-chip">${m}</span>`).join('');
 
-  root.querySelectorAll('.m-region').forEach(el => el.classList.remove('lit'));
-  parseMuscles(ex.m).forEach(id => { const el = q('#' + id); if (el) el.classList.add('lit'); });
+  /* Swap the highlight with transitions suppressed, otherwise the previous
+     exercise's regions visibly fade out as the new ones fade in. */
+  const map = q('.mm-map');
+  map.classList.add('no-tx');
+  const lit = parseMuscles(ex.m);
+  root.querySelectorAll('.m-region').forEach(el => el.classList.toggle('lit', lit.has(el.id)));
+  void map.offsetWidth;                 // commit it before transitions come back
+  map.classList.remove('no-tx');
 
   q('#mm-ol').classList.add('on');
 }

@@ -20,7 +20,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 import { PROGRAM } from './data.js';
-import { RATIOS, NOTES, TIER_PCT, rankFor, verseFor } from './standards.js';
+import { LIFTS, SRC_LABEL, TIER_PCT, rankFor, verseFor } from './standards.js';
 import { load, save, todayStr, dateStr } from '../../assets/js/storage.js';
 
 /* ── storage ── */
@@ -97,8 +97,12 @@ const est1RM = (w, r) => w * (1 + r / 30);
    Linear between the published anchors; tapered above Elite so a huge
    number can't run away to 100. */
 function pctFor(ratio, tiers) {
-  if (ratio <= 0) return 0;
-  if (ratio < tiers[0]) return (ratio / tiers[0]) * TIER_PCT[0];
+  if (ratio <= tiers[0]) {
+    /* Below the Beginner anchor. Guard against anchors that are zero or
+       negative — weighted pull-ups start out assisted, so theirs is -0.20. */
+    if (tiers[0] <= 0) return 0;
+    return Math.max(0, (ratio / tiers[0]) * TIER_PCT[0]);
+  }
   for (let k = 0; k < tiers.length - 1; k++) {
     if (ratio < tiers[k + 1]) {
       const span = tiers[k + 1] - tiers[k];
@@ -109,8 +113,18 @@ function pctFor(ratio, tiers) {
   return Math.min(99.9, TIER_PCT[4] + (ratio / tiers[4] - 1) * 60);
 }
 
-/* Working weight needed to reach `targetRatio` at this bodyweight. */
-const weightFor = (targetRatio, bw, r) => (targetRatio * bw) / (1 + r / 30);
+/* The ratio a lift scores at, and the inverse: what working weight would
+   be needed to hit a target ratio. Both branch on how the source measures
+   the lift — per dumbbell, summed across two, or added onto bodyweight. */
+function ratioOf(spec, wv, bw, r) {
+  if (spec.mode === 'added') return (est1RM(bw + wv, r) - bw) / bw;
+  return est1RM(wv * (spec.mult || 1), r) / bw;
+}
+function weightFor(spec, targetRatio, bw, r) {
+  const e = 1 + r / 30;
+  if (spec.mode === 'added') return (bw + targetRatio * bw) / e - bw;
+  return (targetRatio * bw) / (e * (spec.mult || 1));
+}
 
 export function strength() {
   const bw = load('bp_bw', []);
@@ -119,18 +133,17 @@ export function strength() {
   const out = { bodyweight, reps: r, lifts: [], unscored: [], overall: 0, rank: rankFor(0), scored: 0 };
 
   Object.keys(w).forEach(name => {
-    if (!RATIOS[name]) out.unscored.push({ name, w: w[name] });
+    if (!LIFTS[name]) out.unscored.push({ name, w: w[name] });
   });
   out.unscored.sort((a, b) => a.name.localeCompare(b.name));
 
   if (!bodyweight) return out;
 
-  Object.keys(RATIOS).forEach(name => {
+  Object.keys(LIFTS).forEach(name => {
     const wv = w[name];
     if (!(wv > 0)) return;
-    const tiers = RATIOS[name];
-    const oneRM = est1RM(wv, r);
-    const ratio = oneRM / bodyweight;
+    const spec = LIFTS[name], tiers = spec.r;
+    const ratio = ratioOf(spec, wv, bodyweight, r);
     const pct = pctFor(ratio, tiers);
     const rk = rankFor(pct);
     /* lbs of working weight still needed for the next letter */
@@ -138,9 +151,18 @@ export function strength() {
     if (rk.next) {
       const ti = TIER_PCT.indexOf(rk.next.min);
       const targetRatio = ti >= 0 ? tiers[ti] : tiers[tiers.length - 1] * 1.08;
-      need = Math.max(0, weightFor(targetRatio, bodyweight, r) - wv);
+      need = Math.max(0, weightFor(spec, targetRatio, bodyweight, r) - wv);
     }
-    out.lifts.push({ name, w: wv, oneRM, ratio, pct, rank: rk, need, note: NOTES[name] || null });
+    out.lifts.push({
+      name, w: wv, ratio, pct, rank: rk, need,
+      /* the 1RM the ratio was actually derived from */
+      oneRM: spec.mode === 'added' ? ratio * bodyweight : est1RM(wv * (spec.mult || 1), r),
+      oneRMLabel: spec.mode === 'added' ? 'est. 1RM added' : 'est. 1RM',
+      src: spec.src, srcLabel: SRC_LABEL[spec.src],
+      /* only worth a tooltip when the standard isn't a direct match or there's
+         a genuine caveat — otherwise every row grows a badge and says nothing */
+      note: spec.note ? `${spec.note}${spec.base && spec.base !== 'None published' ? ` (Standard: ${spec.base}.)` : ''}` : null,
+    });
   });
 
   out.scored = out.lifts.length;
@@ -390,12 +412,14 @@ function liftsHTML(st) {
   const rows = st.lifts.map(l => `
     <div class="rk-lift">
       <div class="rk-lift-top">
-        <div class="rk-lift-n">${l.name}${l.note ? `<span class="rk-lift-note" title="${l.note}">?</span>` : ''}</div>
+        <div class="rk-lift-n">${l.name}${l.srcLabel
+            ? `<span class="rk-lift-src ${l.src}" title="${l.note || ''}">${l.srcLabel}</span>`
+            : (l.note ? `<span class="rk-lift-src info" title="${l.note}">i</span>` : '')}</div>
         <div class="rk-lift-r" style="color:var(${l.rank.c})">${l.rank.l}</div>
       </div>
       ${bandTrack(l.pct, false)}
       <div class="rk-lift-foot">
-        <span><b>${l.w}</b> lbs working · <b>${Math.round(l.oneRM)}</b> lbs est. 1RM · ${l.ratio.toFixed(2)}× bw</span>
+        <span><b>${l.w}</b> lbs · <b>${Math.round(l.oneRM)}</b> ${l.oneRMLabel} · ${l.ratio.toFixed(2)}× bw</span>
         <span class="rk-lift-need">${l.need !== null && l.rank.next
             ? `+${l.need < 1 ? l.need.toFixed(1) : Math.round(l.need)} lbs → ${l.rank.next.l}`
             : 'maxed'}</span>
@@ -406,7 +430,7 @@ function liftsHTML(st) {
     `<button class="rk-rep ${r === st.reps ? 'sel' : ''}" data-act="rk-reps" data-r="${r}">${r}</button>`).join('');
 
   const unscored = st.unscored.length ? `<div class="rk-unscored">
-      <div class="rk-unscored-t">Not scored — no published standard for these</div>
+      <div class="rk-unscored-t">Not scored — not a weighted lift in this program</div>
       <div class="rk-unscored-l">${st.unscored.map(u => `<span>${u.name} <b>${u.w}</b></span>`).join('')}</div>
     </div>` : '';
 
@@ -422,12 +446,6 @@ function liftsHTML(st) {
     ${st.lifts.length ? `<div class="rk-lift-list">${rows}</div>`
       : `<div class="pg-empty">No weights set on any scored lift yet.</div>`}
     ${unscored}
-    <div class="rk-method">
-      Working weight → estimated 1RM (Epley, ${st.reps} reps), divided by bodyweight, compared with
-      Strength Level's male standards for that lift. Dumbbell weights are read as <b>one</b> dumbbell.
-      Percentiles are interpolated between the Beginner / Novice / Intermediate / Advanced / Elite anchors
-      (5th / 20th / 50th / 80th / 95th).
-    </div>
   </div>`;
 }
 
