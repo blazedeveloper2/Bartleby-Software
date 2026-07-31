@@ -2,7 +2,16 @@
    SCRIPTURE — everything scoped under .sc
    Colours come from the theme variables, so both palettes work
    without a per-theme block here.
+
+   This app is for reading, not for scanning numbers, so it does
+   not inherit the dense HUD type the trackers use. Scripture and
+   commentary are set in a serif at proper reading size and full
+   text contrast; --text-3 is reserved for genuine metadata and
+   never used for anything you are meant to actually read.
    ═══════════════════════════════════════════════════════════ */
+
+/* Locally installed on every platform, so no extra font to download. */
+.sc{--read:Georgia,'Iowan Old Style','Times New Roman',serif}
 
 /* ── shell: nav + panels, matching the other apps ── */
 .sc .nav{position:sticky;top:var(--shell-bar-h,0);z-index:50;background:var(--bg);border-bottom:1px solid var(--border)}
@@ -18,13 +27,13 @@
 /* ── shared surfaces ── */
 .sc-card-plain{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
 .sc-sec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px}
-.sc-sec span:first-child{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-2)}
-.sc-sec-n{font-size:10px;color:var(--text-3);font-family:var(--mono)}
-.sc-empty{background:var(--bg-card);border:1px dashed var(--border-lt);border-radius:var(--r);padding:22px 20px;text-align:center;color:var(--text-3);font-size:12.5px;line-height:1.65}
+.sc-sec span:first-child{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-2)}
+.sc-sec-n{font-size:11px;color:var(--text-2);font-family:var(--mono)}
+.sc-empty{background:var(--bg-card);border:1px dashed var(--border-lt);border-radius:var(--r);padding:22px 20px;text-align:center;color:var(--text-2);font-size:13.5px;line-height:1.7}
 .sc-missing{text-align:left}
-.sc-missing b{color:var(--text-2)}
-.sc-missing code{font-family:var(--mono);font-size:11px;color:var(--amber)}
-.sc-loading{padding:26px;text-align:center;color:var(--text-3);font-size:12px;letter-spacing:.5px}
+.sc-missing b{color:var(--text)}
+.sc-missing code{font-family:var(--mono);font-size:12px;color:var(--amber)}
+.sc-loading{padding:26px;text-align:center;color:var(--text-2);font-size:13px;letter-spacing:.5px}
 
 .sc-btn{background:var(--bg-alt);border:1px solid var(--border-lt);color:var(--text-2);font-family:var(--font);font-size:12.5px;font-weight:600;padding:10px 18px;border-radius:var(--rs);cursor:pointer;transition:all .14s}
 .sc-btn:hover{background:var(--bg-hover);color:var(--text)}
@@ -44,21 +53,29 @@
 
 /* ═══════════ BOOK LIST ═══════════ */
 .sc-books{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px}
-.sc-book{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;cursor:pointer;transition:all .13s;text-align:left}
+.sc-book{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--border-lt);border-radius:var(--rs);padding:12px 13px;cursor:pointer;transition:all .13s;text-align:left}
 .sc-book:hover{border-color:var(--blue);background:var(--bg-hover)}
-.sc-book-n{font-family:var(--font);font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sc-book-c{font-family:var(--mono);font-size:9.5px;color:var(--text-3);flex-shrink:0}
+.sc-book-n{font-family:var(--font);font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-book-c{font-family:var(--mono);font-size:11px;color:var(--text-2);flex-shrink:0}
 
 /* ═══════════ CHAPTER PICKER + READER ═══════════ */
-.sc-bookbar{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.sc-back{background:none;border:none;color:var(--text-3);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;transition:color .13s}
-.sc-back:hover{color:var(--blue)}
-.sc-bookbar-t{font-size:17px;font-weight:700;color:var(--text)}
+.sc-bookbar{display:flex;align-items:center;gap:13px;margin-bottom:14px}
+/* was a bare grey word and easy to miss entirely — it is the only way back */
+.sc-back{background:var(--bg-card);border:1px solid var(--border-lt);color:var(--text);
+  font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;
+  padding:9px 15px;border-radius:var(--rs);transition:all .13s;flex-shrink:0}
+.sc-back:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.sc-bookbar-t{font-size:19px;font-weight:700;color:var(--text)}
 
-.sc-chs{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:5px;max-height:168px;overflow-y:auto}
-.sc-ch{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);color:var(--text-3);font-family:var(--mono);font-size:12px;font-weight:600;padding:8px 2px;cursor:pointer;transition:all .12s}
-.sc-ch:hover{color:var(--text);border-color:var(--border-lt)}
-.sc-ch.on{background:var(--blue);border-color:var(--blue);color:#fff}
+/* Chapter picker: bigger targets, readable numerals, and enough height
+   that Psalms does not become a postage stamp of 150 tiny squares. */
+/* positioned so the chips measure their offsetTop against this box —
+   index.js centres the active chapter using it */
+.sc-chs{position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;max-height:232px;overflow-y:auto}
+.sc-ch{background:var(--bg);border:1px solid var(--border-lt);border-radius:var(--rs);color:var(--text);
+  font-family:var(--mono);font-size:14px;font-weight:600;padding:11px 2px;cursor:pointer;transition:all .12s}
+.sc-ch:hover{border-color:var(--blue);background:var(--bg-hover)}
+.sc-ch.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
 
 .sc-readnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 .sc-readnav-t{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text-2);letter-spacing:.5px}
@@ -66,16 +83,17 @@
 .sc-nav-b:hover:not(:disabled){border-color:var(--blue);color:var(--text)}
 .sc-nav-b:disabled{opacity:.35;cursor:not-allowed}
 
-.sc-chapter{padding:6px 14px}
-.sc-v{display:grid;grid-template-columns:24px 1fr auto;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;border-radius:4px}
+.sc-chapter{padding:8px 16px}
+.sc-v{display:grid;grid-template-columns:26px 1fr auto;gap:12px;padding:13px 6px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;border-radius:4px}
 .sc-v:last-child{border-bottom:none}
 .sc-v:hover{background:var(--bg-hover)}
 .sc-v.focus{background:var(--blue-d);box-shadow:inset 2px 0 0 var(--blue)}
-.sc-v-n{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text-3);text-align:right;padding-top:3px}
-.sc-v-t{font-size:14.5px;line-height:1.7;color:var(--text)}
-.sc-v-m{display:flex;align-items:flex-start;gap:5px;padding-top:2px}
-.sc-v-star{color:var(--amber);font-size:12px}
-.sc-v-c{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--blue);background:var(--blue-d);border-radius:20px;padding:2px 6px}
+.sc-v-n{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text-2);text-align:right;padding-top:5px}
+/* the actual scripture: serif, reading size, full contrast */
+.sc-v-t{font-family:var(--read);font-size:17px;line-height:1.75;color:var(--text);letter-spacing:.1px}
+.sc-v-m{display:flex;align-items:flex-start;gap:6px;padding-top:4px}
+.sc-v-star{color:var(--amber);font-size:14px}
+.sc-v-c{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--blue);background:var(--blue-d);border-radius:20px;padding:3px 8px}
 
 /* ═══════════ SAVED ═══════════ */
 .sc-lib-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -88,9 +106,9 @@
 .sc-srow:last-child{border-bottom:none}
 .sc-srow-b{flex:1;min-width:0;cursor:pointer}
 .sc-srow-b:hover .sc-srow-r{color:var(--blue)}
-.sc-srow-r{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--text-2);transition:color .13s}
-.sc-srow-t{font-size:13px;line-height:1.6;color:var(--text);margin-top:3px}
-.sc-srow-note{font-size:11.5px;line-height:1.5;color:var(--text-3);margin-top:5px;padding-left:9px;border-left:2px solid var(--border-lt)}
+.sc-srow-r{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--blue);transition:color .13s}
+.sc-srow-t{font-family:var(--read);font-size:15.5px;line-height:1.7;color:var(--text);margin-top:5px}
+.sc-srow-note{font-size:12.5px;line-height:1.6;color:var(--text-2);margin-top:8px;padding-left:11px;border-left:2px solid var(--amber)}
 .sc-srow-x{background:none;border:none;color:var(--text-3);font-size:18px;line-height:1;cursor:pointer;padding:2px 5px;border-radius:5px;flex-shrink:0;transition:all .12s}
 .sc-srow-x:hover{color:var(--red);background:var(--red-d)}
 
@@ -107,7 +125,7 @@
 .sc-modal-r{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text)}
 .sc-x{background:none;border:none;color:var(--text-3);font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:all .12s}
 .sc-x:hover{color:var(--text);background:var(--bg-hover)}
-.sc-modal-text{font-size:15.5px;line-height:1.8;color:var(--text);background:var(--bg);border-left:2px solid var(--blue);border-radius:0 var(--rs) var(--rs) 0;padding:15px 17px;margin-bottom:14px}
+.sc-modal-text{font-family:var(--read);font-size:18px;line-height:1.8;color:var(--text);background:var(--bg);border-left:3px solid var(--blue);border-radius:0 var(--rs) var(--rs) 0;padding:17px 19px;margin-bottom:16px}
 .sc-modal-btns{display:flex;gap:8px}
 .sc-modal-btns .sc-btn{flex:1;text-align:center}
 
@@ -118,25 +136,33 @@
 .sc-in::placeholder{color:var(--text-3)}
 .sc-ta{resize:vertical;line-height:1.6}
 
-/* the Fathers */
-.sc-com{margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
-.sc-com-e{background:var(--bg);border-radius:var(--rs);padding:13px 15px;margin-bottom:9px}
-.sc-com-h{display:flex;align-items:baseline;gap:9px;margin-bottom:7px}
-.sc-com-a{font-size:12.5px;font-weight:700;color:var(--amber)}
-.sc-com-t{font-family:var(--mono);font-size:9.5px;color:var(--text-3)}
-.sc-com-x{font-size:13px;line-height:1.75;color:var(--text-2)}
-.sc-com-s{font-size:10px;color:var(--text-3);margin-top:8px;font-style:italic}
+/* the Fathers — these are paragraphs of argument, sometimes hundreds of
+   words, so they get the same reading treatment the scripture does */
+.sc-com{margin-top:22px;border-top:1px solid var(--border);padding-top:18px}
+.sc-com-e{background:var(--bg);border-radius:var(--rs);padding:16px 18px;margin-bottom:11px}
+.sc-com-h{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.sc-com-a{font-size:14px;font-weight:700;color:var(--amber);letter-spacing:.2px}
+.sc-com-t{font-family:var(--mono);font-size:11px;color:var(--text-2)}
+.sc-com-x{font-family:var(--read);font-size:15.5px;line-height:1.8;color:var(--text)}
+.sc-com-s{font-size:11.5px;color:var(--text-2);margin-top:11px;font-style:italic;
+  padding-top:9px;border-top:1px solid var(--border)}
 
 /* ═══════════ MOBILE ═══════════ */
+/* Mobile keeps the reading sizes — a phone is where this actually gets
+   read, so only the chrome tightens up, never the text. */
 @media(max-width:820px){
   .sc .app-wrap{padding:16px 12px 100px}
-  .sc-books{grid-template-columns:repeat(auto-fill,minmax(108px,1fr))}
-  .sc-book{padding:10px}
-  .sc-book-n{font-size:12px}
-  .sc-chs{grid-template-columns:repeat(auto-fill,minmax(34px,1fr));max-height:150px}
-  .sc-v-t{font-size:14px}
-  .sc-chapter{padding:4px 8px}
+  .sc-books{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+  .sc-book{padding:11px}
+  .sc-book-n{font-size:13px}
+  .sc-chs{grid-template-columns:repeat(auto-fill,minmax(44px,1fr));max-height:206px}
+  .sc-chapter{padding:6px 8px}
+  .sc-v{grid-template-columns:22px 1fr auto;gap:10px;padding:12px 2px}
+  .sc-v-t{font-size:16.5px}
   .sc-modal{padding:16px;max-height:94vh}
-  .sc-modal-text{font-size:15px}
-  .sc-jump-in{font-size:15px}
+  .sc-modal-text{font-size:17px;padding:15px 16px}
+  .sc-com-e{padding:14px 15px}
+  .sc-com-x{font-size:15px}
+  .sc-jump-in{font-size:16px}
+  .sc-bookbar-t{font-size:17px}
 }

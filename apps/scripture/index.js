@@ -61,7 +61,17 @@ function renderLibrary() {
     </div>
     ${jumpErr ? `<div class="sc-jump-err">${esc(jumpErr)}</div>` : ''}
     ${book ? chapterViewHTML() : bookListHTML()}`;
-  if (book) paintChapter();
+  if (!book) return;
+  /* Centre the current chapter in the picker. Psalm 119 sits two thirds of
+     the way down a 150-chapter scroller and would otherwise be off-screen
+     with no sign it was selected. Set scrollTop rather than calling
+     scrollIntoView, which would also drag the page. */
+  const on = q('.sc-ch.on');
+  if (on) {
+    const box = on.parentElement;
+    box.scrollTop = on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2;
+  }
+  paintChapter();
 }
 
 function bookListHTML() {
