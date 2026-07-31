@@ -43,13 +43,26 @@
 .sc-tr{font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--text-3);background:var(--bg);padding:3px 7px;border-radius:3px;margin-left:9px;vertical-align:middle}
 
 /* ═══════════ JUMP BOX ═══════════ */
-.sc-jump{display:flex;gap:8px;margin-bottom:12px}
+.sc-jump{position:relative;display:flex;gap:8px;margin-bottom:12px}
 .sc-jump-in{flex:1;min-width:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .14s}
 .sc-jump-in:focus{border-color:var(--blue)}
 .sc-jump-in::placeholder{color:var(--text-3)}
 .sc-jump-go{background:var(--blue);border:none;color:#fff;font-family:var(--font);font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:0 20px;border-radius:var(--rs);cursor:pointer;transition:background .14s}
 .sc-jump-go:hover{background:var(--btn-hover)}
 .sc-jump-err{background:var(--red-d);border:1px solid var(--red);color:var(--red);border-radius:var(--rs);padding:10px 13px;font-size:12px;margin-bottom:12px;line-height:1.5}
+
+/* Book suggestions, floating over the page so they don't shove it around */
+.sc-sugg{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:40;
+  background:var(--bg-card);border:1px solid var(--border-lt);border-radius:var(--rs);
+  overflow:hidden;box-shadow:0 14px 34px -12px #000}
+.sc-sugg.on{display:block}
+.sc-sugg-i{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%;
+  background:none;border:none;border-bottom:1px solid var(--border);padding:13px 15px;cursor:pointer;
+  text-align:left;transition:background .1s}
+.sc-sugg-i:last-child{border-bottom:none}
+.sc-sugg-i:hover,.sc-sugg-i.on{background:var(--blue-d)}
+.sc-sugg-n{font-family:var(--font);font-size:14.5px;font-weight:600;color:var(--text)}
+.sc-sugg-c{font-family:var(--mono);font-size:11px;color:var(--text-2);flex-shrink:0}
 
 /* ═══════════ BOOK LIST ═══════════ */
 .sc-books{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px}
@@ -121,10 +134,22 @@
 .sc-overlay.on{opacity:1;pointer-events:all}
 .sc-modal{background:var(--bg-card);box-shadow:inset 0 0 0 1px var(--border);border-radius:var(--r);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:20px;animation:sc-modal-in .24s ease}
 @keyframes sc-modal-in{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
-.sc-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+/* Sticky, because nineteen fathers is a long scroll and the way out
+   should not be somewhere up above the top of the screen. */
+.sc-modal-head{position:sticky;top:-20px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:-20px -20px 14px;padding:16px 20px;background:var(--bg-card);border-bottom:1px solid var(--border)}
 .sc-modal-r{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text)}
-.sc-x{background:none;border:none;color:var(--text-3);font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:all .12s}
-.sc-x:hover{color:var(--text);background:var(--bg-hover)}
+/* 44px square: a real target, not a 22px glyph in the corner */
+.sc-x{display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;
+  background:var(--bg);border:1px solid var(--border-lt);color:var(--text);font-size:24px;line-height:1;
+  cursor:pointer;border-radius:var(--rs);transition:all .12s;margin-right:-4px}
+.sc-x:hover{background:var(--red);border-color:var(--red);color:#fff}
+
+/* Thumb-reachable way out at the end of a long read. */
+.sc-done{width:100%;margin-top:18px;background:var(--bg-alt);border:1px solid var(--border-lt);color:var(--text);
+  font-family:var(--font);font-size:13.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:15px;border-radius:var(--rs);cursor:pointer;transition:all .14s}
+.sc-done:hover{background:var(--bg-hover);border-color:var(--blue)}
 .sc-modal-text{font-family:var(--read);font-size:18px;line-height:1.8;color:var(--text);background:var(--bg);border-left:3px solid var(--blue);border-radius:0 var(--rs) var(--rs) 0;padding:17px 19px;margin-bottom:16px}
 .sc-modal-btns{display:flex;gap:8px}
 .sc-modal-btns .sc-btn{flex:1;text-align:center}

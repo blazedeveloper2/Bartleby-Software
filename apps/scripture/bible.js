@@ -91,6 +91,39 @@ export function parseRef(input) {
   return { book: book.n, ch: chapter, v: v ? +v : null };
 }
 
+/* Book matches for a half-typed reference, so "matt" offers Matthew and
+   "1 co" offers 1 Corinthians. Prefix matches first, since those are what
+   you meant; a contains-match is the fallback for "corinth". */
+export function suggest(input, limit = 7) {
+  const s = String(input).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!s) return [];
+  const m = s.match(/^((?:[1-3]\s*)?[a-z][a-z ]*?)\s*(\d+)?\s*(?::\s*(\d+))?$/);
+  if (!m) return [];
+  const [, rawBook, ch, v] = m;
+  const ord = rawBook.trim().match(/^([1-3])\s*(.*)$/);
+  const stem = (ord ? ord[2] : rawBook.trim()).replace(/\s+/g, '');
+  if (!stem) return [];
+
+  const norm = n => n.toLowerCase().replace(/\s+/g, '');
+  const target = norm((ord ? ord[1] : '') + stem);
+
+  /* Shortest name first: on "jo" that surfaces Job, Joel and John ahead of
+     Joshua, because the fewer letters left to type the likelier it is what
+     you meant. Canon order breaks ties. */
+  const byCloseness = (a, b) => a.n.length - b.n.length;
+  let hits = BOOKS.filter(b => norm(b.n).startsWith(target)).sort(byCloseness);
+  const alias = ALIAS[ord ? stem + ord[1] : stem];
+  if (alias && !hits.some(b => b.n === alias)) hits = [bookByName(alias), ...hits];
+  if (!hits.length) hits = BOOKS.filter(b => norm(b.n).includes(target)).sort(byCloseness);
+
+  return hits.filter(Boolean).slice(0, limit).map(b => ({
+    book: b.n,
+    chapters: b.c,
+    ch: ch ? Math.min(Math.max(1, +ch), b.c) : null,
+    v: v ? +v : null,
+  }));
+}
+
 /* ── lazy stores ── */
 const textCache = new Map();
 const comCache = new Map();

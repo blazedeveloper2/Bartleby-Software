@@ -14,7 +14,7 @@
 import { load, save, todayStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
 import {
-  BOOKS, bookByName, parseRef, loadBook, loadCommentary, versesOf, refOf,
+  BOOKS, bookByName, parseRef, suggest, loadBook, loadCommentary, versesOf, refOf,
 } from './bible.js';
 
 /* ── storage ── */
@@ -38,6 +38,7 @@ let jumpErr = '';
 let focusVerse = null;        // verse number to highlight after a jump
 let openRef = null;           // {book, ch, v} in the reader modal
 let savedFilter = '';
+let suggIndex = 0;            // highlighted book suggestion
 let busy = false;
 
 const q = s => root.querySelector(s);
@@ -58,6 +59,7 @@ function renderLibrary() {
     <div class="sc-jump">
       <input class="sc-jump-in" id="sc-jump" placeholder="Jump to — try “matthew 25”" autocomplete="off" spellcheck="false">
       <button class="sc-jump-go" data-act="jump">Go</button>
+      <div class="sc-sugg" id="sc-sugg"></div>
     </div>
     ${jumpErr ? `<div class="sc-jump-err">${esc(jumpErr)}</div>` : ''}
     ${book ? chapterViewHTML() : bookListHTML()}`;
@@ -162,6 +164,35 @@ function setChapter(n) {
   chapter = Math.min(Math.max(1, n), b.c);
   renderLibrary();
 }
+/* Suggestions are painted straight into their own container rather than
+   through renderLibrary, which would rebuild the input and drop the caret
+   on every keystroke. */
+function paintSuggestions() {
+  const box = q('#sc-sugg'); if (!box) return;
+  const raw = q('#sc-jump')?.value || '';
+  const hits = suggest(raw);
+  suggIndex = Math.min(suggIndex, hits.length - 1);
+  if (!hits.length) { box.innerHTML = ''; box.classList.remove('on'); return; }
+  box.innerHTML = hits.map((h, i) => `
+    <button class="sc-sugg-i ${i === suggIndex ? 'on' : ''}" data-act="sugg"
+            data-b="${esc(h.book)}" data-c="${h.ch || 1}" data-v="${h.v || ''}">
+      <span class="sc-sugg-n">${esc(h.book)}${h.ch ? ` ${h.ch}` : ''}${h.v ? `:${h.v}` : ''}</span>
+      <span class="sc-sugg-c">${h.ch ? `of ${h.chapters}` : `${h.chapters} chapter${h.chapters === 1 ? '' : 's'}`}</span>
+    </button>`).join('');
+  box.classList.add('on');
+}
+function hideSuggestions() {
+  const box = q('#sc-sugg');
+  if (box) { box.innerHTML = ''; box.classList.remove('on'); }
+  suggIndex = 0;
+}
+function takeSuggestion(b, ch, v) {
+  hideSuggestions();
+  jumpErr = '';
+  openBook(b, +ch || 1, v ? +v : null);
+  if (v) openVerse(b, +ch || 1, +v);
+}
+
 function doJump() {
   const raw = q('#sc-jump')?.value || '';
   if (!raw.trim()) return;
@@ -215,7 +246,8 @@ async function paintVerse() {
           ${c.s ? `<div class="sc-com-s">${esc(c.s)}</div>` : ''}
         </div>`).join('')
       : `<div class="sc-empty sc-missing">No commentary on this verse yet. Coverage is uneven by design — the Fathers wrote at length on some verses and passed over others.</div>`}
-    </div>`;
+    </div>
+    <button class="sc-done" data-act="close-verse">Done</button>`;
 }
 
 /* ═══════════════════ SAVED ═══════════════════ */
@@ -318,6 +350,7 @@ function onClick(e) {
     case 'chapter':      setChapter(+a.n); break;
     case 'ch-shift':     setChapter(chapter + (+a.d)); break;
     case 'jump':         doJump(); break;
+    case 'sugg':         takeSuggestion(a.b, a.c, a.v); break;
     case 'verse':        openVerse(book, chapter, +a.n); break;
     case 'close-verse':  closeVerse(); break;
     case 'toggle-save':  toggleSave(); break;
@@ -329,6 +362,7 @@ function onClick(e) {
 }
 
 function onInput(e) {
+  if (e.target.id === 'sc-jump') { suggIndex = 0; paintSuggestions(); return; }
   if (e.target.id !== 'sc-sq') return;
   savedFilter = e.target.value;
   const pos = e.target.selectionStart;
@@ -338,8 +372,35 @@ function onInput(e) {
 }
 
 function onKeydown(e) {
-  if (e.key === 'Escape' && openRef) { closeVerse(); return; }
-  if (e.key === 'Enter' && e.target.id === 'sc-jump') { e.preventDefault(); doJump(); }
+  if (e.key === 'Escape') {
+    if (q('#sc-sugg')?.classList.contains('on')) { hideSuggestions(); return; }
+    if (openRef) closeVerse();
+    return;
+  }
+  if (e.target.id !== 'sc-jump') return;
+
+  const items = [...root.querySelectorAll('.sc-sugg-i')];
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!items.length) return;
+    e.preventDefault();
+    suggIndex = (suggIndex + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    paintSuggestions();
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    /* Enter takes the highlighted suggestion when there is one, so half a
+       book name plus Enter goes where you were obviously heading. */
+    const pick = items[suggIndex];
+    if (pick) takeSuggestion(pick.dataset.b, pick.dataset.c, pick.dataset.v);
+    else doJump();
+  }
+}
+
+/* Losing focus hides the list, but not before a tap on it registers. */
+function onFocusOut(e) {
+  if (e.target.id !== 'sc-jump') return;
+  setTimeout(() => { if (document.activeElement?.id !== 'sc-jump') hideSuggestions(); }, 160);
 }
 
 function onExternalChange() {
@@ -377,6 +438,7 @@ export default {
     root.addEventListener('click', onClick);
     root.addEventListener('input', onInput);
     root.addEventListener('keydown', onKeydown);
+    root.addEventListener('focusout', onFocusOut);
     window.addEventListener('bs:datachange', onExternalChange);
     renderLibrary(); renderSaved();
     switchTab(activeTab);
@@ -386,6 +448,7 @@ export default {
       root.removeEventListener('click', onClick);
       root.removeEventListener('input', onInput);
       root.removeEventListener('keydown', onKeydown);
+      root.removeEventListener('focusout', onFocusOut);
     }
     window.removeEventListener('bs:datachange', onExternalChange);
     root = null;
