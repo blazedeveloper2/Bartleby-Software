@@ -14,12 +14,20 @@
 import { load, save, todayStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
 import {
-  BOOKS, bookByName, parseRef, loadBook, loadCommentary, refOf,
+  BOOKS, bookByName, parseRef, loadBook, loadCommentary, versesOf, refOf,
 } from './bible.js';
 
 /* ── storage ── */
 const savedAll = () => load('sc_saved', []);
 const savedSv  = l => save('sc_saved', l);
+
+/* The memorisation app that used to live here left sc_v and sc_log behind.
+   Nothing reads them now, but they still count against the storage budget
+   and ride along in every backup, so retire them once on mount. */
+const RETIRED = ['sc_v', 'sc_log'];
+function dropRetiredKeys() {
+  RETIRED.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+}
 
 /* ── state ── */
 let root = null;
@@ -35,6 +43,13 @@ let busy = false;
 const q = s => root.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const isSaved = ref => savedAll().some(s => s.ref === ref);
+
+/* The database stores a bare year, negative for BC. */
+const yearLabel = y => {
+  const n = parseInt(y, 10);
+  if (!isFinite(n)) return '';
+  return n < 0 ? `${-n} BC` : `AD ${n}`;
+};
 
 /* ═══════════════════ LIBRARY ═══════════════════ */
 function renderLibrary() {
@@ -96,13 +111,13 @@ async function paintChapter() {
   const verses = data[String(chapter)] || [];
   if (!verses.length) { q('#sc-chapter').innerHTML = `<div class="sc-empty">No verses found for ${esc(want)}.</div>`; return; }
 
-  let com = {};
-  try { com = await loadCommentary(book); } catch {}
+  let com = { e: [], v: {} };
+  try { com = await loadCommentary(book, chapter); } catch {}
   if (!q('#sc-chapter') || `${book} ${chapter}` !== want) return;
 
   q('#sc-chapter').innerHTML = `<div class="sc-card-plain sc-chapter">${verses.map((t, i) => {
     const n = i + 1, ref = refOf(book, chapter, n);
-    const cn = (com[`${chapter}:${n}`] || []).length;
+    const cn = versesOf(com, n).length;
     return `<div class="sc-v ${focusVerse === n ? 'focus' : ''}" data-act="verse" data-n="${n}">
       <span class="sc-v-n">${n}</span>
       <span class="sc-v-t">${esc(t)}</span>
@@ -161,7 +176,7 @@ async function paintVerse() {
   const ref = refOf(b, ch, v);
   let text = '', com = [];
   try { text = (await loadBook(b))[String(ch)]?.[v - 1] || ''; } catch {}
-  try { com = (await loadCommentary(b))[`${ch}:${v}`] || []; } catch {}
+  try { com = versesOf(await loadCommentary(b, ch), v); } catch {}
   if (!openRef || refOf(openRef.book, openRef.ch, openRef.v) !== ref) return;
 
   const saved = isSaved(ref);
@@ -185,9 +200,9 @@ async function paintVerse() {
       <div class="sc-sec"><span>The Fathers</span><span class="sc-sec-n">${com.length || 'none'}</span></div>
       ${com.length ? com.map(c => `
         <div class="sc-com-e">
-          <div class="sc-com-h"><span class="sc-com-a">${esc(c.author)}</span>${c.time ? `<span class="sc-com-t">${esc(c.time)}</span>` : ''}</div>
-          <div class="sc-com-x">${esc(c.text)}</div>
-          ${c.source ? `<div class="sc-com-s">${esc(c.source)}</div>` : ''}
+          <div class="sc-com-h"><span class="sc-com-a">${esc(c.a)}</span>${c.y ? `<span class="sc-com-t">${yearLabel(c.y)}</span>` : ''}</div>
+          <div class="sc-com-x">${esc(c.t)}</div>
+          ${c.s ? `<div class="sc-com-s">${esc(c.s)}</div>` : ''}
         </div>`).join('')
       : `<div class="sc-empty sc-missing">No commentary on this verse yet. Coverage is uneven by design — the Fathers wrote at length on some verses and passed over others.</div>`}
     </div>`;
@@ -341,10 +356,12 @@ function template() {
 export default {
   id: 'scripture',
   name: 'Scripture',
+  storagePrefix: 'sc_',
   styles: 'apps/scripture/scripture.css',
   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M12 6v7"/><path d="M9.5 8.5h5"/></svg>',
   mount(el) {
     root = el;
+    dropRetiredKeys();
     jumpErr = ''; openRef = null; busy = false;
     root.innerHTML = template();
     root.addEventListener('click', onClick);

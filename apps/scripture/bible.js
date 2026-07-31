@@ -113,14 +113,22 @@ export async function loadBook(name) {
 }
 export const bookLoaded = name => textCache.has(name);
 
-/* → { '3:16': [{author, time, source, text}, …] } */
-export async function loadCommentary(name) {
-  if (comCache.has(name)) return comCache.get(name);
-  let data = {};
-  try { data = await getJSON(`${DATA_ROOT}/commentary/${slug(name)}.json`); }
-  catch { data = {}; }                  // no file for this book is normal
-  comCache.set(name, data);
+/* One file per chapter, shaped { e:[entry…], v:{ '16':[indexes into e] } }.
+   A note spanning several verses is stored once and referenced from each
+   verse it covers, which keeps a chapter like John 3 at 595 KB instead of
+   repeating the same paragraph of Chrysostom nine times over. */
+export async function loadCommentary(name, ch) {
+  const k = `${name}/${ch}`;
+  if (comCache.has(k)) return comCache.get(k);
+  let data = { e: [], v: {} };
+  try { data = await getJSON(`${DATA_ROOT}/commentary/${slug(name)}/${ch}.json`); }
+  catch { /* a chapter with no commentary is normal, not an error */ }
+  comCache.set(k, data);
   return data;
 }
+
+/* Entries for one verse, in file order — earliest father first. */
+export const versesOf = (data, v) =>
+  (data?.v?.[String(v)] || []).map(i => data.e[i]).filter(Boolean);
 
 export const refOf = (book, ch, v) => `${book} ${ch}:${v}`;

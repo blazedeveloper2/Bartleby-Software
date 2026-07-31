@@ -17,14 +17,28 @@ Live apps:
   categories) with a calendar date picker and notes, a filterable history with
   per-day totals and a jump-to-any-day filter, and Insights (category donut +
   jump-to-any month/year + 12-month trend).
-- **Scripture** — a memorisation trainer. A library of verses (four starter
-  packs in the KJV, which is public domain, plus anything you type in any
-  translation), a **Review** session that asks for the verse from memory with a
-  first-letters / half-the-words hint ladder, and a **Progress** view with a
-  review heatmap and a seven-day forecast. Scheduling is SM-2, the spaced
-  repetition algorithm behind most flashcard software: each verse carries its
-  own interval, which grows when you recall it and collapses when you don't.
-  See `apps/scripture/srs.js`.
+- **Scripture** — read the Bible with the Church Fathers. **Library** walks the
+  canon book by book, or takes a reference in the jump box (`matthew 25`,
+  `mt 25:31`, `1cor13`, `ps 23`). Tapping a verse opens it with every patristic
+  comment on it, earliest father first, each named with its source work.
+  **Saved** keeps the verses you starred, grouped in canon order, with your own
+  note. Everything is offline: no key, no API, no network.
+
+  The data lives in `assets/data/` and is generated, not hand-written:
+
+  - `kjv/` — 66 files, one per book, 31,102 verses. King James, public domain.
+    Source: [aruljohn/Bible-kjv](https://github.com/aruljohn/Bible-kjv).
+  - `commentary/<Book>/<chapter>.json` — 87,184 comments from 335 fathers,
+    from Tertullian to Aquinas. Source:
+    [HistoricalChristianFaith/Commentaries-Database](https://github.com/HistoricalChristianFaith/Commentaries-Database)
+    (public-domain compilation; some entries excerpt copyrighted translations
+    under a fair-use notice). Authors condemned by an ecumenical council are
+    excluded, as are the deuterocanonical books, which the KJV text here does
+    not carry. A note spanning several verses is stored once per chapter and
+    referenced from each verse it covers.
+
+  Coverage is uneven by nature — John 3:16 has 19 comments, most of Numbers
+  has none. The reader says so rather than looking broken.
 
 **Settings** (gear, bottom of the sidebar) holds the theme picker, the
 pull-up-bar toggle, and backup.
@@ -57,10 +71,13 @@ Bartleby Software/
 │       ├── theme.js          # theme registry, get/set/apply
 │       ├── storage.js        # localStorage helpers
 │       └── ui.js             # toast helper
+│   └── data/
+│       ├── kjv/              # 66 books of KJV text (~4 MB)
+│       └── commentary/       # patristic commentary, one file per chapter (~100 MB)
 ├── apps/
 │   ├── workout/              # index.js + data.js + rank.js + standards.js + workout.css
 │   ├── finance/              # expense tracker
-│   └── scripture/            # index.js + data.js (verse packs) + srs.js + scripture.css
+│   └── scripture/            # index.js + bible.js + scripture.css
 ├── manifest.json             # Add to Home Screen (standalone app window)
 ├── .github/workflows/deploy.yml   # auto-deploy to GitHub Pages on every push
 ├── start.bat                 # one-click: run locally (double-click this)
@@ -74,8 +91,10 @@ Bartleby Software/
    `{ id, name, icon, styles, mount(root), unmount() }`.
 2. Add its CSS at `apps/<name>/<name>.css`.
 3. Import it in `assets/js/shell.js` and add it to the `APPS` array.
-4. Add its storage prefix to `BACKUP_PREFIXES` in the same file — miss this
-   and the app works fine while its data quietly stays out of every backup.
+4. Give it a `storagePrefix` (e.g. `sc_`) in that same default export. The
+   shell reads it to include the app in backups and to name its slice in the
+   Settings storage breakdown — miss it and the app works fine while its data
+   quietly stays out of every backup.
 
 That's it — it shows up as a tab automatically.
 

@@ -15,10 +15,15 @@ import { THEMES, getTheme, setTheme, applyTheme } from './theme.js';
 
 const APPS = [workout, finance, scripture];
 const ACTIVE_KEY = 'bartleby_active_app';
-// Prefixes included in a backup. bs_ carries suite-level settings (theme).
-// Adding an app means adding its prefix here, or its data silently
-// stops travelling with the backup.
-const BACKUP_PREFIXES = ['bp_', 'fin_', 'sc_', 'bs_'];
+// Each app declares its own storage prefix, so a new app joins the backup
+// and the storage breakdown by existing rather than by being listed twice.
+// bs_ carries suite-level settings (theme) and belongs to no app.
+const SUITE_PREFIX = 'bs_';
+const OWNERS = [
+  ...APPS.filter(a => a.storagePrefix).map(a => ({ p: a.storagePrefix, name: a.name })),
+  { p: SUITE_PREFIX, name: 'Settings' },
+];
+const BACKUP_PREFIXES = OWNERS.map(o => o.p);
 const STORAGE_BUDGET = 5 * 1024 * 1024;       // ~5 MB typical localStorage cap
 
 const root = document.getElementById('app-root');
@@ -102,14 +107,37 @@ function loadActive() {
 /* ═══════════════════ SETTINGS / BACKUP ═══════════════════ */
 const isBackupKey = k => BACKUP_PREFIXES.some(p => k.startsWith(p));
 
-function usageBytes() {
-  let b = 0;
+/* Storage split by whoever owns it. "On-device storage: 2.9 KB" says you
+   are fine but not what is costing you anything, which is the only useful
+   thing to know when you are near the cap. Anything matching no prefix
+   (the remembered active app, say) lands in Other. */
+function usageBreakdown() {
+  const groups = OWNERS.map(o => ({ ...o, bytes: 0, keys: [] }));
+  const other = { p: null, name: 'Other', bytes: 0, keys: [] };
+  let total = 0;
+
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    b += k.length + (localStorage.getItem(k) || '').length;
+    const n = k.length + (localStorage.getItem(k) || '').length;
+    total += n;
+    (groups.find(g => k.startsWith(g.p)) || other).bytes += n;
+    (groups.find(g => k.startsWith(g.p)) || other).keys.push({ k, n });
   }
-  return b;
+
+  const rows = [...groups, other]
+    .filter(g => g.bytes > 0)
+    .sort((a, b) => b.bytes - a.bytes);
+  rows.forEach(r => r.keys.sort((a, b) => b.n - a.n));
+  return { rows, total };
 }
+
+const fmtBytes = n => n < 1024 ? `${n} B`
+                  : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KB`
+                  : `${(n / 1024 / 1024).toFixed(2)} MB`;
+
+/* Fixed hues rather than theme accents: these are labels, and a legend
+   that changes meaning with the palette is not a legend. */
+const OWNER_COLOR = ['#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#f472b6', '#64748b'];
 
 function buildSettings() {
   const el = document.createElement('div');
@@ -137,7 +165,8 @@ function buildSettings() {
         <div class="sx-sec-lbl mt">Data &amp; Backup</div>
         <div class="sx-usage">
           <div class="sx-usage-top"><span>On-device storage</span><span id="sx-usage-txt"></span></div>
-          <div class="sx-bar"><div class="sx-bar-fill" id="sx-bar-fill"></div></div>
+          <div class="sx-bar" id="sx-bar"></div>
+          <div class="sx-legend" id="sx-legend"></div>
           <div class="sx-hint">All your data lives only in this browser. Export a backup file before switching phones or browsers, then import it on the new one to restore everything.</div>
         </div>
         <div class="sx-actions">
@@ -206,12 +235,27 @@ function syncSettings() {
 
 function openSettings() {
   const el = document.getElementById('sx-ol') || buildSettings();
-  const bytes = usageBytes();
-  const kb = bytes / 1024;
-  const pct = Math.min(100, (bytes / STORAGE_BUDGET) * 100);
-  el.querySelector('#sx-usage-txt').textContent =
-    `${kb < 1024 ? kb.toFixed(1) + ' KB' : (kb / 1024).toFixed(2) + ' MB'} of ~5 MB`;
-  el.querySelector('#sx-bar-fill').style.width = Math.max(pct, 1.5) + '%';
+  const { rows, total } = usageBreakdown();
+
+  el.querySelector('#sx-usage-txt').textContent = `${fmtBytes(total)} of ~5 MB`;
+
+  /* One segment per owner, each scaled against the 5 MB cap so the bar
+     keeps meaning what it meant before — the share of what's left. */
+  el.querySelector('#sx-bar').innerHTML = rows.map((r, i) => {
+    const pct = Math.min(100, (r.bytes / STORAGE_BUDGET) * 100);
+    return `<div class="sx-bar-fill" style="width:${Math.max(pct, 0.4)}%;background:${OWNER_COLOR[i % OWNER_COLOR.length]}"
+                 title="${r.name} · ${fmtBytes(r.bytes)}"></div>`;
+  }).join('') || '<div class="sx-bar-fill" style="width:0"></div>';
+
+  el.querySelector('#sx-legend').innerHTML = rows.length ? rows.map((r, i) => `
+    <div class="sx-leg">
+      <span class="sx-leg-d" style="background:${OWNER_COLOR[i % OWNER_COLOR.length]}"></span>
+      <span class="sx-leg-n">${r.name}</span>
+      <span class="sx-leg-k">${r.keys.length} key${r.keys.length === 1 ? '' : 's'}</span>
+      <span class="sx-leg-v">${fmtBytes(r.bytes)}</span>
+      <span class="sx-leg-p">${total ? Math.round((r.bytes / total) * 100) : 0}%</span>
+    </div>`).join('') : '<div class="sx-leg empty">Nothing stored yet.</div>';
+
   syncSettings();
   el.classList.add('on');
 }
