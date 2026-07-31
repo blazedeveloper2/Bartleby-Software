@@ -66,7 +66,11 @@
   .sidebar{
     position:sticky;top:0;height:auto;
     flex-direction:row;align-items:center;justify-content:space-between;
-    padding:9px 14px;gap:12px;
+    /* installed to the Home Screen the window paints under the status bar
+       and notch (viewport-fit=cover + black-translucent), so the bar's
+       background runs to the top edge while its contents sit below it.
+       env() resolves to 0 in a normal browser tab. */
+    padding:calc(9px + env(safe-area-inset-top)) 14px 9px;gap:12px;
     background:var(--bg);border-right:none;border-bottom:1px solid var(--border);
     z-index:60;overflow-x:auto;scrollbar-width:none;
   }

@@ -1,0 +1,14 @@
+{
+  "name": "Bartleby Software",
+  "short_name": "Bartleby",
+  "description": "Local-first workout and expense tracking.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0705",
+  "theme_color": "#0a0705",
+  "icons": [
+    { "src": "assets/tree.jpg", "sizes": "1080x1080", "type": "image/jpeg", "purpose": "any" }
+  ]
+}

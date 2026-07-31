@@ -9,6 +9,7 @@ import { PROGRAM, MMAP } from './data.js';
 import { load, save, todayStr, dateStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
 import { pctColor, ord } from './standards.js';
+import { swipeTabs } from '../../assets/js/swipe.js';
 import {
   setsOf, syncDay, logPR, delSession, setReps, snapshot,
   isLoggedToday, celebrationHTML, renderRank, liftScores, standingOf, resEx,
@@ -25,7 +26,9 @@ const bwAll = () => load('bp_bw', []);
 const bwSv  = l => save('bp_bw', l);
 
 /* ── module state ── */
+const TABS = ['program', 'bw', 'rank'];   // order the swipe moves through
 let root = null;
+let unswipe = null;
 let activeTab = 'program';
 let bwRange = '30';
 let bwEditDate = null;
@@ -565,6 +568,7 @@ export default {
     root.addEventListener('change', onChange);
     root.addEventListener('keydown', onKeydown);
     window.addEventListener('bs:datachange', onExternalChange);
+    unswipe = swipeTabs(q('.app-wrap'), TABS, () => activeTab, switchTab);
     renderProg(); renderBW();
     switchTab(activeTab);
   },
@@ -574,6 +578,7 @@ export default {
       root.removeEventListener('change', onChange);
       root.removeEventListener('keydown', onKeydown);
     }
+    unswipe?.(); unswipe = null;
     window.removeEventListener('bs:datachange', onExternalChange);
     root = null;
   },

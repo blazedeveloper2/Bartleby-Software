@@ -9,6 +9,7 @@
 import { DEFAULT_CATS, PALETTE } from './data.js';
 import { load, save, todayStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
+import { swipeTabs } from '../../assets/js/swipe.js';
 
 /* ── storage ── */
 const txAll    = () => load('fin_tx', []);
@@ -17,7 +18,9 @@ const getCats  = () => [...load('fin_cats', DEFAULT_CATS)].sort((a, b) => a.name
 const catsSave = l => save('fin_cats', l);
 
 /* ── state ── */
+const TABS = ['add', 'history', 'insights'];   // order the swipe moves through
 let root = null;
+let unswipe = null;
 let activeTab = 'add';
 let editId = null, viewId = null;
 let addingCat = false, managingCats = false, editCat = null;
@@ -579,6 +582,7 @@ export default {
     root.addEventListener('input', onInput);
     root.addEventListener('mouseover', onOver);
     root.addEventListener('mouseout', onOut);
+    unswipe = swipeTabs(q('.app-wrap'), TABS, () => activeTab, switchTab);
     renderAll();
     switchTab(activeTab);
   },
@@ -591,6 +595,7 @@ export default {
       root.removeEventListener('mouseover', onOver);
       root.removeEventListener('mouseout', onOut);
     }
+    unswipe?.(); unswipe = null;
     root = null;
   },
 };

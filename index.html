@@ -4,10 +4,15 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/jpeg" href="assets/tree.jpg">
 <link rel="apple-touch-icon" href="assets/tree.jpg">
+<link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bartleby">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#08090d">
+<!-- viewport-fit=cover so the standalone window paints under the notch and
+     home indicator; the padding below keeps content clear of both. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- matches the default (arcade) palette; theme.js rewrites this on change -->
+<meta name="theme-color" content="#0a0705">
 <title>Bartleby Software</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
