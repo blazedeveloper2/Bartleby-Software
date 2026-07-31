@@ -15,8 +15,16 @@ Live apps:
   See `apps/workout/standards.js` for the data and its sources.
 - **Finance** — expense tracker: log spending by category (add/delete your own
   categories) with a calendar date picker and notes, a filterable history with
-  tap-to-view details, and Insights (category donut + jump-to-any month/year +
-  12-month trend).
+  per-day totals and a jump-to-any-day filter, and Insights (category donut +
+  jump-to-any month/year + 12-month trend).
+- **Scripture** — a memorisation trainer. A library of verses (four starter
+  packs in the KJV, which is public domain, plus anything you type in any
+  translation), a **Review** session that asks for the verse from memory with a
+  first-letters / half-the-words hint ladder, and a **Progress** view with a
+  review heatmap and a seven-day forecast. Scheduling is SM-2, the spaced
+  repetition algorithm behind most flashcard software: each verse carries its
+  own interval, which grows when you recall it and collapses when you don't.
+  See `apps/scripture/srs.js`.
 
 **Settings** (gear, bottom of the sidebar) holds the theme picker, the
 pull-up-bar toggle, and backup.
@@ -51,7 +59,9 @@ Bartleby Software/
 │       └── ui.js             # toast helper
 ├── apps/
 │   ├── workout/              # index.js + data.js + rank.js + standards.js + workout.css
-│   └── finance/              # expense tracker
+│   ├── finance/              # expense tracker
+│   └── scripture/            # index.js + data.js (verse packs) + srs.js + scripture.css
+├── manifest.json             # Add to Home Screen (standalone app window)
 ├── .github/workflows/deploy.yml   # auto-deploy to GitHub Pages on every push
 ├── start.bat                 # one-click: run locally (double-click this)
 ├── sync.bat                  # one-click: commit + push
@@ -64,6 +74,8 @@ Bartleby Software/
    `{ id, name, icon, styles, mount(root), unmount() }`.
 2. Add its CSS at `apps/<name>/<name>.css`.
 3. Import it in `assets/js/shell.js` and add it to the `APPS` array.
+4. Add its storage prefix to `BACKUP_PREFIXES` in the same file — miss this
+   and the app works fine while its data quietly stays out of every backup.
 
 That's it — it shows up as a tab automatically.
 

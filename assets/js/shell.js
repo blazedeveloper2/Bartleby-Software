@@ -9,13 +9,16 @@
 
 import workout from '../../apps/workout/index.js';
 import finance from '../../apps/finance/index.js';
+import scripture from '../../apps/scripture/index.js';
 import { toast } from './ui.js';
 import { THEMES, getTheme, setTheme, applyTheme } from './theme.js';
 
-const APPS = [workout, finance];
+const APPS = [workout, finance, scripture];
 const ACTIVE_KEY = 'bartleby_active_app';
 // Prefixes included in a backup. bs_ carries suite-level settings (theme).
-const BACKUP_PREFIXES = ['bp_', 'fin_', 'bs_'];
+// Adding an app means adding its prefix here, or its data silently
+// stops travelling with the backup.
+const BACKUP_PREFIXES = ['bp_', 'fin_', 'sc_', 'bs_'];
 const STORAGE_BUDGET = 5 * 1024 * 1024;       // ~5 MB typical localStorage cap
 
 const root = document.getElementById('app-root');
