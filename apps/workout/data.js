@@ -19,6 +19,9 @@ export const PROGRAM = [
     ]},
   ]},
   {day:'tue',label:'Lower · Quad Focus',sections:[
+    {tag:'Warm-Up',ex:[
+      {n:'Dead Bugs',m:'Rectus Abdominis, TVA',s:'1× easy /side'},
+    ]},
     {tag:null,ex:[
       {n:'Bulgarian Split Squats',m:'Quads, Glutes, Adductors',s:'2×F /leg',b:'Flat 0°',bc:'bench-flat'},
       {n:'Heel-Elevated Goblet Squats',m:'Quads, Glutes, Core',s:'2×F'},
@@ -26,10 +29,10 @@ export const PROGRAM = [
       {n:'Standing Calf Raises',m:'Gastrocnemius, Soleus',s:'2×F'},
     ]},
     {tag:'Core',ex:[
-      {n:'Hanging Knee Raises',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×F',
-       alt:{n:'Reverse Crunches',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×F',b:'Flat 0°',bc:'bench-flat'}},
-      {n:'Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side'},
-      {n:'Dead Bugs',m:'Rectus Abdominis, TVA',s:'2×F /side'},
+      {n:'Dumbbell Crunch',m:'Rectus Abdominis, Obliques',s:'2×8-15',b:'Hips On Bench',bc:'bench-flat'},
+      {n:'Weighted Hanging Leg Raises',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
+       alt:{n:'Weighted Reverse Crunches',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
+      {n:'Weighted Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side',b:'DB On Top Hip',bc:'grip'},
     ]},
   ]},
   {day:'thu',label:'Upper · Pull Focus',sections:[
@@ -55,12 +58,13 @@ export const PROGRAM = [
     ]},
     {tag:'Accessories',ex:[
       {n:'Standing Calf Raises',m:'Gastrocnemius, Soleus',s:'2×F'},
+      {n:"Farmer's Carries",m:'Traps, Forearms, Core',s:'2×F'},
     ]},
     {tag:'Core',ex:[
-      {n:'Hanging Knee Raises',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×F',
-       alt:{n:'Reverse Crunches',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×F',b:'Flat 0°',bc:'bench-flat'}},
-      {n:'Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side'},
-      {n:"Farmer's Carries",m:'Traps, Forearms, Core',s:'2×F'},
+      {n:'Dumbbell Crunch',m:'Rectus Abdominis, Obliques',s:'2×8-15',b:'Hips On Bench',bc:'bench-flat'},
+      {n:'Weighted Hanging Leg Raises',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
+       alt:{n:'Weighted Reverse Crunches',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
+      {n:'Weighted Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side',b:'DB On Top Hip',bc:'grip'},
     ]},
   ]},
 ];

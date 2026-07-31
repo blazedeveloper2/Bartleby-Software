@@ -539,7 +539,7 @@ function liftsHTML(st) {
     `<button class="rk-rep ${r === st.reps ? 'sel' : ''}" data-act="rk-reps" data-r="${r}">${r}</button>`).join('');
 
   const unscored = st.unscored.length ? `<div class="rk-unscored">
-      <div class="rk-unscored-t">Not scored — not a weighted lift in this program</div>
+      <div class="rk-unscored-t">Not scored — no published standard to score these against</div>
       <div class="rk-unscored-l">${st.unscored.map(u => `<span>${u.name} <b>${u.w}</b></span>`).join('')}</div>
     </div>` : '';
 

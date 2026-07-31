@@ -21,9 +21,17 @@
    pages, lb, male, "Bodyweight Ratio" table). Retrieved Jul 2026
    from datasets of ~0.2–5M logged lifts per exercise.
 
-   Bodyweight-only core work (planks, dead bugs, knee raises) takes no
-   load, so there is nothing to score and nothing published to score
-   it against. Those simply never appear here.
+   Core work never appears here, for two different reasons. Dead bugs
+   take no load at all, so there is nothing to score. The weighted core
+   movements — dumbbell crunch, weighted reverse crunch / hanging leg
+   raise, weighted side plank — do take load, but no usable standard
+   exists for them: Strength Level scores crunches and leg raises in
+   REPS at bodyweight, not in weight, and its one weighted-flexion
+   entry (standing cable crunch, ~0.99× bodyweight at Intermediate)
+   loads through a rope overhead rather than a dumbbell at the chest,
+   so it is nowhere near comparable. Rather than invent a number,
+   these log their weight and read as unscored — which still gives the
+   progressive-overload trail, which is the point of loading them.
    ═══════════════════════════════════════════════════════════ */
 
 export const LIFTS = {
