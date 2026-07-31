@@ -109,23 +109,48 @@
 .tx-group:not(.solo){cursor:pointer}
 .tx-group:not(.solo):hover .tx-group-d{color:var(--text-2)}
 .tx-group:not(.solo):hover .tx-group-t{color:var(--green)}
-.tx-group-d{transition:color .12s}
+.tx-group-d{transition:color .12s;display:flex;align-items:center;gap:5px}
+/* a chevron, so it reads as somewhere you can go rather than a caption */
+.tx-group-go{font-style:normal;font-size:13px;color:var(--text-3);letter-spacing:0;transition:transform .12s,color .12s}
+.tx-group:hover .tx-group-go{color:var(--blue);transform:translateX(2px)}
 .tx-group-t{font-family:var(--mono);font-size:11px;letter-spacing:0;color:var(--text-2);
   display:flex;align-items:center;gap:6px;transition:color .12s;flex-shrink:0}
 .tx-group-n{font-size:9px;color:var(--text-3);background:var(--bg);border-radius:20px;padding:1px 6px;letter-spacing:.5px}
 
-/* Jump-to-a-day control under the month/category filters */
-.fx-daybar{display:flex;align-items:center;gap:9px;margin-bottom:12px;
-  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rs);padding:7px 11px}
-.fx-daybar-l{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);flex-shrink:0}
-.fx-date{flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--text);
-  font-family:var(--mono);font-size:12.5px;font-weight:600;-webkit-appearance:none}
-.fx-date::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer}
-.fx-daybar-x{background:var(--bg);border:1px solid var(--border-lt);color:var(--text-3);
-  font-family:var(--font);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  padding:5px 10px;border-radius:var(--rs);cursor:pointer;transition:all .12s;flex-shrink:0}
-.fx-daybar-x:hover{color:var(--text);border-color:var(--border-lt);background:var(--bg-hover)}
 .fx-select:disabled{opacity:.45;cursor:not-allowed}
+
+/* Calendar toggle, sitting with the other two filters */
+.fx-calbtn{flex-shrink:0;width:42px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rs);
+  color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .13s}
+.fx-calbtn svg{width:17px;height:17px}
+.fx-calbtn:hover{color:var(--text);border-color:var(--border-lt)}
+.fx-calbtn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* Spending calendar: each day shows what it cost, tinted by how much */
+.fx-histcal{margin:0 0 12px}
+.fx-cal-d{position:relative;flex-direction:column;gap:1px;aspect-ratio:1;padding:3px 0;
+  background:var(--green-d);border:1px solid transparent}
+.fx-cal-d::before{content:'';position:absolute;inset:0;border-radius:6px;background:var(--green);opacity:var(--heat,0)}
+.fx-cal-d.none{background:none}
+.fx-cal-d.none .fx-cal-n{color:var(--text-3)}
+.fx-cal-n{position:relative;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);line-height:1}
+.fx-cal-a{position:relative;font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--text);opacity:.9;line-height:1}
+.fx-cal-d.today{border-color:var(--text-3)}
+.fx-cal-d.sel{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 2px var(--sel-bd)}
+.fx-cal-d.sel::before{opacity:0}
+.fx-cal-d.sel .fx-cal-n,.fx-cal-d.sel .fx-cal-a{color:#fff}
+.fx-cal-foot{display:flex;justify-content:space-between;gap:10px;margin-top:11px;padding-top:10px;
+  border-top:1px solid var(--border);font-size:10.5px;color:var(--text-2)}
+
+/* Banner while one day is pinned, replacing the old inert date strip */
+.fx-dayon{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;
+  background:var(--blue-d);border:1px solid var(--sel-bd);border-radius:var(--rs);padding:10px 13px}
+.fx-dayon-l{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3)}
+.fx-dayon-d{font-size:13.5px;font-weight:600;color:var(--text);margin-top:3px}
+.fx-dayon-x{background:var(--bg-card);border:1px solid var(--border-lt);color:var(--text);
+  font-family:var(--font);font-size:11.5px;font-weight:600;padding:8px 13px;border-radius:var(--rs);
+  cursor:pointer;transition:all .12s;flex-shrink:0}
+.fx-dayon-x:hover{background:var(--bg-hover);border-color:var(--blue)}
 .tx-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);transition:background .12s;cursor:pointer}
 .tx-row:last-child{border-bottom:none}
 .tx-row:hover{background:var(--bg-hover)}

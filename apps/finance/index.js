@@ -25,6 +25,7 @@ let selCat = null, newCatColor = PALETTE[0];
 let draft = { amt: '', date: '', note: '' };
 let calOpen = false, calView = '';
 let histMonth = 'all', histCat = 'all', histDay = '';
+let histCalOpen = false, histCalView = '';
 let insMode = 'month', insMonth = '', insYear = '';
 let insPickOpen = false, insPickYear = '';
 
@@ -326,6 +327,58 @@ function viewTx(id) {
 }
 function closeModal() { q('#fx-modal').classList.remove('on'); viewId = null; }
 
+/* A month at a glance, each day carrying what it cost. The old control here
+   was a bare <input type="date"> whose picker button `appearance:none` had
+   stripped away, so it looked like an empty strip and did nothing when
+   tapped. A calendar answers the same question and shows the answer without
+   being asked — you can see which days were expensive before picking one. */
+function histCalHTML(all) {
+  const view = histCalView || (histDay || todayStr()).slice(0, 7);
+  const [y, m] = view.split('-').map(Number);
+  const startDow = new Date(y, m - 1, 1).getDay();
+  const days = new Date(y, m, 0).getDate();
+  const today = todayStr();
+
+  const spend = {};
+  all.forEach(t => { if (t.d.startsWith(view)) spend[t.d] = (spend[t.d] || 0) + t.amt; });
+  const peak = Math.max(0, ...Object.values(spend));
+
+  const dows = ['S','M','T','W','T','F','S'].map(d => `<div class="cal-dow">${d}</div>`).join('');
+  let cells = '';
+  for (let i = 0; i < startDow; i++) cells += '<div></div>';
+  for (let day = 1; day <= days; day++) {
+    const ds = `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const amt = spend[ds] || 0;
+    /* opacity carries relative spend, so a heavy day reads as heavy */
+    const heat = peak ? 0.14 + (amt / peak) * 0.5 : 0;
+    const cls = ['cal-day', 'fx-cal-d'];
+    if (ds === histDay) cls.push('sel');
+    if (ds === today) cls.push('today');
+    if (!amt) cls.push('none');
+    cells += `<button class="${cls.join(' ')}" data-act="hist-day-pick" data-d="${ds}"
+        ${amt ? `style="--heat:${heat.toFixed(2)}"` : ''} title="${fmtDateLong(ds)}${amt ? ' · ' + fmtMoney(amt) : ' · nothing logged'}">
+      <span class="fx-cal-n">${day}</span>
+      <span class="fx-cal-a">${amt ? (amt >= 1000 ? Math.round(amt/1000) + 'k' : Math.round(amt)) : ''}</span>
+    </button>`;
+  }
+
+  const monthTotal = Object.values(spend).reduce((a, n) => a + n, 0);
+  const daysWith = Object.keys(spend).length;
+  return `<div class="fx-cal fx-histcal">
+    <div class="cal-head">
+      <button class="cal-nav" data-act="hist-cal-shift" data-d="-1" title="Previous month">‹</button>
+      <div class="cal-title">${monthLabel(view)}</div>
+      <button class="cal-nav" data-act="hist-cal-shift" data-d="1" title="Next month">›</button>
+    </div>
+    <div class="cal-grid">${dows}</div>
+    <div class="cal-grid">${cells}</div>
+    <div class="fx-cal-foot">
+      <span>${fmtMoney(monthTotal)} this month</span>
+      <span>${daysWith} day${daysWith === 1 ? '' : 's'} with spending</span>
+    </div>
+  </div>`;
+}
+
 /* ═══════════════════ HISTORY TAB ═══════════════════ */
 function renderHistory() {
   const all = txAll();
@@ -345,16 +398,16 @@ function renderHistory() {
 
   /* A single day is a different question from a month, so the controls say
      which one you're looking at rather than leaving both half-applied. */
-  const dayMax = all.length ? all.map(t => t.d).sort().pop() : todayStr();
   let h = `<div class="fx-filters">
       <select class="fx-select" id="hist-month" ${histDay ? 'disabled' : ''}>${monthOpts}</select>
       <select class="fx-select" id="hist-cat">${catOpts}</select>
+      <button class="fx-calbtn ${histCalOpen ? 'on' : ''}" data-act="hist-cal" title="Pick a day">${CAL_SVG}</button>
     </div>
-    <div class="fx-daybar">
-      <span class="fx-daybar-l">Jump to a day</span>
-      <input class="fx-date" type="date" id="hist-day" value="${histDay}" max="${dayMax > todayStr() ? dayMax : todayStr()}">
-      ${histDay ? `<button class="fx-daybar-x" data-act="hist-day-clear" title="Show the whole month again">Clear</button>` : ''}
-    </div>`;
+    ${histCalOpen ? histCalHTML(all) : ''}
+    ${histDay ? `<div class="fx-dayon">
+        <div><div class="fx-dayon-l">Showing one day</div><div class="fx-dayon-d">${fmtDateLong(histDay)}</div></div>
+        <button class="fx-dayon-x" data-act="hist-day-clear">Show the month</button>
+      </div>` : ''}`;
 
   const label = histDay ? fmtDateLong(histDay) : null;
   h += `<div class="fx-stats">
@@ -385,7 +438,7 @@ function renderHistory() {
       /* tapping the header narrows to that one day — the fastest path to
          "what did I spend on this day" is the day already on screen */
       h += `<div class="tx-group ${histDay ? 'solo' : ''}" ${histDay ? '' : `data-act="hist-day-pick" data-d="${t.d}"`}>
-        <span class="tx-group-d">${fmtDateFull(t.d)}</span>
+        <span class="tx-group-d">${fmtDateFull(t.d)}${histDay ? '' : '<i class="tx-group-go">›</i>'}</span>
         <span class="tx-group-t">${fmtMoney(dayTotals[t.d])}<span class="tx-group-n">${n}</span></span>
       </div>`;
       lastDate = t.d;
@@ -518,6 +571,8 @@ function onClick(e) {
     case 'tab':           switchTab(a.tab); break;
     case 'hist-day-pick': histPickDay(a.d); break;
     case 'hist-day-clear':histClearDay(); break;
+    case 'hist-cal':      histToggleCal(); break;
+    case 'hist-cal-shift':histCalShift(+a.d); break;
     case 'pick-cat':      pickCat(a.cat); break;
     case 'cat-manage':    managingCats = !managingCats; addingCat = false; editCat = null; reRender(); break;
     case 'edit-cat':      openEditCat(a.cat); break;
@@ -556,9 +611,8 @@ function insShift(delta) {
   insPickOpen = false; renderInsights();
 }
 function onChange(e) {
-  if (e.target.id === 'hist-month') { histMonth = e.target.value; renderHistory(); }
+  if (e.target.id === 'hist-month') { histMonth = e.target.value; histCalView = ''; renderHistory(); }
   else if (e.target.id === 'hist-cat') { histCat = e.target.value; renderHistory(); }
-  else if (e.target.id === 'hist-day') histPickDay(e.target.value);
   else if (e.target.id === 'fx-color') updateNewColor(e.target.value);
 }
 
@@ -566,10 +620,25 @@ function onChange(e) {
    day drops you back into the month you were just looking at. */
 function histPickDay(d) {
   histDay = d || '';
-  if (histDay) histMonth = histDay.slice(0, 7);
+  if (histDay) { histMonth = histDay.slice(0, 7); histCalView = histDay.slice(0, 7); }
   renderHistory();
 }
 function histClearDay() { histDay = ''; renderHistory(); }
+function histToggleCal() {
+  histCalOpen = !histCalOpen;
+  if (histCalOpen && !histCalView) {
+    /* open on the month you're already looking at, not always on today */
+    histCalView = histDay ? histDay.slice(0, 7)
+                : histMonth !== 'all' ? histMonth
+                : todayStr().slice(0, 7);
+  }
+  renderHistory();
+}
+function histCalShift(delta) {
+  const view = histCalView || todayStr().slice(0, 7);
+  histCalView = shiftMonth(view, delta);
+  renderHistory();
+}
 function onKeydown(e) {
   if (e.key !== 'Enter') return;
   if (e.target.id === 'fx-amount') { e.preventDefault(); saveTx(); }
@@ -615,7 +684,7 @@ export default {
     editId = null; viewId = null; addingCat = false; managingCats = false; editCat = null;
     selCat = null; newCatColor = PALETTE[0]; calOpen = false; calView = curMonth();
     draft = { amt: '', date: todayStr(), note: '' };
-    histMonth = 'all'; histCat = 'all'; histDay = '';
+    histMonth = 'all'; histCat = 'all'; histDay = ''; histCalOpen = false; histCalView = '';
     insMode = 'month'; insMonth = curMonth(); insYear = curYear(); insPickOpen = false;
 
     root.innerHTML = template();
