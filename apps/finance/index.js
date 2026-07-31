@@ -9,7 +9,6 @@
 import { DEFAULT_CATS, PALETTE } from './data.js';
 import { load, save, todayStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
-import { swipeTabs } from '../../assets/js/swipe.js';
 
 /* ── storage ── */
 const txAll    = () => load('fin_tx', []);
@@ -18,16 +17,14 @@ const getCats  = () => [...load('fin_cats', DEFAULT_CATS)].sort((a, b) => a.name
 const catsSave = l => save('fin_cats', l);
 
 /* ── state ── */
-const TABS = ['add', 'history', 'insights'];   // order the swipe moves through
 let root = null;
-let unswipe = null;
 let activeTab = 'add';
 let editId = null, viewId = null;
 let addingCat = false, managingCats = false, editCat = null;
 let selCat = null, newCatColor = PALETTE[0];
 let draft = { amt: '', date: '', note: '' };
 let calOpen = false, calView = '';
-let histMonth = 'all', histCat = 'all';
+let histMonth = 'all', histCat = 'all', histDay = '';
 let insMode = 'month', insMonth = '', insYear = '';
 let insPickOpen = false, insPickYear = '';
 
@@ -341,27 +338,58 @@ function renderHistory() {
     .concat(cats.map(c => `<option value="${esc(c.name)}" ${c.name === histCat ? 'selected' : ''}>${esc(c.name)}</option>`)).join('');
 
   let filtered = all.slice();
-  if (histMonth !== 'all') filtered = filtered.filter(t => t.d.startsWith(histMonth));
+  if (histDay)             filtered = filtered.filter(t => t.d === histDay);
+  else if (histMonth !== 'all') filtered = filtered.filter(t => t.d.startsWith(histMonth));
   if (histCat !== 'all')   filtered = filtered.filter(t => t.cat === histCat);
   filtered.sort((a, b) => b.d.localeCompare(a.d));
 
-  let h = `<div class="fx-filters"><select class="fx-select" id="hist-month">${monthOpts}</select><select class="fx-select" id="hist-cat">${catOpts}</select></div>`;
+  /* A single day is a different question from a month, so the controls say
+     which one you're looking at rather than leaving both half-applied. */
+  const dayMax = all.length ? all.map(t => t.d).sort().pop() : todayStr();
+  let h = `<div class="fx-filters">
+      <select class="fx-select" id="hist-month" ${histDay ? 'disabled' : ''}>${monthOpts}</select>
+      <select class="fx-select" id="hist-cat">${catOpts}</select>
+    </div>
+    <div class="fx-daybar">
+      <span class="fx-daybar-l">Jump to a day</span>
+      <input class="fx-date" type="date" id="hist-day" value="${histDay}" max="${dayMax > todayStr() ? dayMax : todayStr()}">
+      ${histDay ? `<button class="fx-daybar-x" data-act="hist-day-clear" title="Show the whole month again">Clear</button>` : ''}
+    </div>`;
+
+  const label = histDay ? fmtDateLong(histDay) : null;
   h += `<div class="fx-stats">
-    <div class="fx-stat accent"><div class="fx-stat-v">${fmtMoneyC(sum(filtered))}</div><div class="fx-stat-l">Total</div></div>
+    <div class="fx-stat accent"><div class="fx-stat-v">${fmtMoneyC(sum(filtered))}</div><div class="fx-stat-l">${label ? 'Spent That Day' : 'Total'}</div></div>
     <div class="fx-stat"><div class="fx-stat-v">${filtered.length}</div><div class="fx-stat-l">Purchases</div></div>
     <div class="fx-stat"><div class="fx-stat-v">${filtered.length ? fmtMoneyC(sum(filtered) / filtered.length) : '$0'}</div><div class="fx-stat-l">Avg / Buy</div></div>
   </div>`;
 
   if (!filtered.length) {
-    h += `<div class="fx-empty">${all.length ? 'Nothing matches these filters.' : 'No expenses logged yet.<br>Add your first on the Add tab.'}</div>`;
+    const why = !all.length ? 'No expenses logged yet.<br>Add your first on the Add tab.'
+              : histDay    ? `Nothing logged on ${label}.`
+              :              'Nothing matches these filters.';
+    h += `<div class="fx-empty">${why}</div>`;
     q('#fp-history').innerHTML = h;
     return;
   }
 
+  /* Every day carries its own total. That is the number you actually want
+     when scanning back through a month, and it costs one row to show. */
+  const dayTotals = {};
+  filtered.forEach(t => { dayTotals[t.d] = (dayTotals[t.d] || 0) + t.amt; });
+
   h += `<div class="day-card"><div class="tx-list">`;
   let lastDate = null;
   filtered.forEach(t => {
-    if (t.d !== lastDate) { h += `<div class="tx-group">${fmtDateFull(t.d)}</div>`; lastDate = t.d; }
+    if (t.d !== lastDate) {
+      const n = filtered.filter(x => x.d === t.d).length;
+      /* tapping the header narrows to that one day — the fastest path to
+         "what did I spend on this day" is the day already on screen */
+      h += `<div class="tx-group ${histDay ? 'solo' : ''}" ${histDay ? '' : `data-act="hist-day-pick" data-d="${t.d}"`}>
+        <span class="tx-group-d">${fmtDateFull(t.d)}</span>
+        <span class="tx-group-t">${fmtMoney(dayTotals[t.d])}<span class="tx-group-n">${n}</span></span>
+      </div>`;
+      lastDate = t.d;
+    }
     h += txRow(t);
   });
   h += `</div></div>`;
@@ -488,6 +516,8 @@ function onClick(e) {
   const a = el.dataset;
   switch (a.act) {
     case 'tab':           switchTab(a.tab); break;
+    case 'hist-day-pick': histPickDay(a.d); break;
+    case 'hist-day-clear':histClearDay(); break;
     case 'pick-cat':      pickCat(a.cat); break;
     case 'cat-manage':    managingCats = !managingCats; addingCat = false; editCat = null; reRender(); break;
     case 'edit-cat':      openEditCat(a.cat); break;
@@ -528,8 +558,18 @@ function insShift(delta) {
 function onChange(e) {
   if (e.target.id === 'hist-month') { histMonth = e.target.value; renderHistory(); }
   else if (e.target.id === 'hist-cat') { histCat = e.target.value; renderHistory(); }
+  else if (e.target.id === 'hist-day') histPickDay(e.target.value);
   else if (e.target.id === 'fx-color') updateNewColor(e.target.value);
 }
+
+/* Picking a day pins the month select to that day's month, so clearing the
+   day drops you back into the month you were just looking at. */
+function histPickDay(d) {
+  histDay = d || '';
+  if (histDay) histMonth = histDay.slice(0, 7);
+  renderHistory();
+}
+function histClearDay() { histDay = ''; renderHistory(); }
 function onKeydown(e) {
   if (e.key !== 'Enter') return;
   if (e.target.id === 'fx-amount') { e.preventDefault(); saveTx(); }
@@ -572,7 +612,7 @@ export default {
     activeTab = 'add'; editId = null; viewId = null; addingCat = false; managingCats = false; editCat = null;
     selCat = null; newCatColor = PALETTE[0]; calOpen = false; calView = curMonth();
     draft = { amt: '', date: todayStr(), note: '' };
-    histMonth = 'all'; histCat = 'all';
+    histMonth = 'all'; histCat = 'all'; histDay = '';
     insMode = 'month'; insMonth = curMonth(); insYear = curYear(); insPickOpen = false;
 
     root.innerHTML = template();
@@ -582,7 +622,6 @@ export default {
     root.addEventListener('input', onInput);
     root.addEventListener('mouseover', onOver);
     root.addEventListener('mouseout', onOut);
-    unswipe = swipeTabs(q('.app-wrap'), TABS, () => activeTab, switchTab);
     renderAll();
     switchTab(activeTab);
   },
@@ -595,7 +634,6 @@ export default {
       root.removeEventListener('mouseover', onOver);
       root.removeEventListener('mouseout', onOut);
     }
-    unswipe?.(); unswipe = null;
     root = null;
   },
 };

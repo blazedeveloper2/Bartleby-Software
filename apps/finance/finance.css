@@ -101,7 +101,31 @@
 .fx-stat.accent .fx-stat-v{color:var(--green)}
 
 /* ── Transaction list (tap a row to view) ── */
-.tx-group{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);padding:14px 4px 6px}
+/* Day header: the date on the left, what that day cost on the right.
+   Tappable while a whole month is on screen, inert once a day is pinned. */
+.tx-group{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);
+  padding:14px 4px 6px;border:none;background:none;width:100%;font-family:var(--font);text-align:left}
+.tx-group:not(.solo){cursor:pointer}
+.tx-group:not(.solo):hover .tx-group-d{color:var(--text-2)}
+.tx-group:not(.solo):hover .tx-group-t{color:var(--green)}
+.tx-group-d{transition:color .12s}
+.tx-group-t{font-family:var(--mono);font-size:11px;letter-spacing:0;color:var(--text-2);
+  display:flex;align-items:center;gap:6px;transition:color .12s;flex-shrink:0}
+.tx-group-n{font-size:9px;color:var(--text-3);background:var(--bg);border-radius:20px;padding:1px 6px;letter-spacing:.5px}
+
+/* Jump-to-a-day control under the month/category filters */
+.fx-daybar{display:flex;align-items:center;gap:9px;margin-bottom:12px;
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rs);padding:7px 11px}
+.fx-daybar-l{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);flex-shrink:0}
+.fx-date{flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--text);
+  font-family:var(--mono);font-size:12.5px;font-weight:600;-webkit-appearance:none}
+.fx-date::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer}
+.fx-daybar-x{background:var(--bg);border:1px solid var(--border-lt);color:var(--text-3);
+  font-family:var(--font);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:5px 10px;border-radius:var(--rs);cursor:pointer;transition:all .12s;flex-shrink:0}
+.fx-daybar-x:hover{color:var(--text);border-color:var(--border-lt);background:var(--bg-hover)}
+.fx-select:disabled{opacity:.45;cursor:not-allowed}
 .tx-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);transition:background .12s;cursor:pointer}
 .tx-row:last-child{border-bottom:none}
 .tx-row:hover{background:var(--bg-hover)}
