@@ -8,9 +8,10 @@
 import { PROGRAM, MMAP } from './data.js';
 import { load, save, todayStr, dateStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
+import { pctColor } from './standards.js';
 import {
   setsOf, syncDay, logPR, delSession, setReps, snapshot,
-  isLoggedToday, celebrationHTML, renderRank,
+  isLoggedToday, celebrationHTML, renderRank, liftScores,
 } from './rank.js';
 
 /* ── namespaced storage ── */
@@ -47,6 +48,10 @@ const q = sel => root.querySelector(sel);
 /* ═══════════════════ PROGRAM TAB ═══════════════════ */
 function renderProg() {
   const p = q('#p-program'), ch = chks(), w = wts();
+  /* Every exercise name is tinted red→green by where that lift stands.
+     Unscored movements (bodyweight core work) and lifts with no weight
+     set aren't in the map and stay the default text colour. */
+  const sc = liftScores();
   let h = '';
   PROGRAM.forEach((day, di) => {
     let tot = 0, dn = 0;
@@ -73,7 +78,9 @@ function renderProg() {
         const wv = w[ex.n];
         const wtH = wv ? `<span class="ex-wt">${wv}</span>` : '';
         const bH  = ex.b ? `<span class="bench-tag ${ex.bc||''}">${ex.b}</span>` : '';
-        h += `<div class="ex-row ${on?'off':''}" data-act="row" data-di="${di}" data-si="${si}" data-ei="${ei}"><span class="ex-rail"></span><div class="ex-chk ${on?'on':''}" data-act="chk" data-k="${k}"></div><span class="ex-idx">${pad(++exN)}</span><div class="ex-body"><div class="ex-name">${ex.n}</div><div class="ex-detail"><span class="ex-musc">${ex.m}</span></div></div><div class="ex-right">${wtH}<span class="ex-sets">${ex.s}</span>${bH}</div></div>`;
+        const l   = sc.get(ex.n);
+        const nA  = l ? ` style="color:${pctColor(l.pct)}" title="${l.rank.l} · ${Math.round(l.pct)}th percentile at your bodyweight"` : '';
+        h += `<div class="ex-row ${on?'off':''}" data-act="row" data-di="${di}" data-si="${si}" data-ei="${ei}"><span class="ex-rail"></span><div class="ex-chk ${on?'on':''}" data-act="chk" data-k="${k}"></div><span class="ex-idx">${pad(++exN)}</span><div class="ex-body"><div class="ex-name"${nA}>${ex.n}</div><div class="ex-detail"><span class="ex-musc">${ex.m}</span></div></div><div class="ex-right">${wtH}<span class="ex-sets">${ex.s}</span>${bH}</div></div>`;
       });
     });
     h += `</div></div>`;
@@ -359,6 +366,7 @@ function bwSave() {
   if (isNaN(w) || w <= 0) { toast('Enter a valid weight'); return; }
   const editing = bwEditDate !== null;
   bwSet(d, w); bwEditDate = null; renderBW();
+  renderProg();                       // every lift is scored against bodyweight
   toast(editing ? 'Updated' : `Logged ${w} lbs`);
 }
 function bwEdit(d) {
@@ -369,6 +377,7 @@ function bwCancelEdit() { bwEditDate = null; renderBW(); }
 function bwDelete(d) {
   if (!confirm(`Delete entry for ${bwFmt(d)}?`)) return;
   bwDel(d); if (bwEditDate === d) bwEditDate = null; renderBW();
+  renderProg();
   toast('Entry deleted');
 }
 
@@ -390,7 +399,9 @@ function progDelete(d, di) {
   renderRank(root); renderProg();
   toast('Session removed');
 }
-function rkSetReps(r) { setReps(r); renderRank(root); }
+/* The rep assumption feeds the 1RM estimate, so it moves every score —
+   and with them the Program tab's colours. */
+function rkSetReps(r) { setReps(r); renderRank(root); renderProg(); }
 
 /* ═══════════════════ TABS ═══════════════════ */
 function switchTab(tab) {

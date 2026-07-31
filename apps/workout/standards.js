@@ -90,6 +90,20 @@ export function rankFor(pct) {
   return { ...RANKS[i], i, next: i + 1 < RANKS.length ? RANKS[i + 1] : null };
 }
 
+/* Percentile → colour, red through amber to green, for reading "low end"
+   vs "high end" at a glance without looking up the letter. Interpolated in
+   HSL rather than stepped by rank, so a lift creeping up its band shifts
+   colour continuously — that drift is the signal that it's ready to go up.
+   Hard-coded endpoints: both themes put --red and --green in the same
+   corners of the wheel, so one scale reads correctly in each. */
+export function pctColor(pct) {
+  const t = Math.max(0, Math.min(100, pct || 0)) / 100;
+  const h = 2 + t * 140;      /* 2° red → 142° green, passing through amber */
+  const s = 92 - t * 24;      /* saturation eases off so green isn't neon */
+  const l = 62 - t * 4;
+  return `hsl(${h.toFixed(1)}, ${s.toFixed(0)}%, ${l.toFixed(0)}%)`;
+}
+
 /* ═══════════════════ DAILY SCRIPTURE ═══════════════════
    King James Version (public domain). Rotates by day-of-year so it
    changes at midnight and is the same all day.

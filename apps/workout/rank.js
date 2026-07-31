@@ -232,6 +232,13 @@ export function strength() {
 
 export function setReps(r) { if (REP_OPTS.includes(+r)) sReps(+r); }
 
+/* Scored lifts keyed by exercise name, for callers outside the Rank tab
+   that need a lift's standing — the Program tab colours each row with it.
+   Empty until a bodyweight and a working weight both exist. */
+export function liftScores() {
+  return new Map(strength().lifts.map(l => [l.name, l]));
+}
+
 /* ═══════════════════ CONSISTENCY STATS ═══════════════════ */
 function streaksFrom(hits, firstDate) {
   const today = todayStr();
