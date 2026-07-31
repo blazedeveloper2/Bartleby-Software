@@ -15,6 +15,11 @@ html{scroll-behavior:smooth}
 body{
   background:var(--bg);color:var(--text);font-family:var(--font);
   min-height:100dvh;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  /* The shell swaps a whole app in and out of one document. Scroll
+     anchoring tries to hold your place through that and ends up
+     overriding the position the shell restores, so it is off here —
+     shell.js owns scroll position across app switches. */
+  overflow-anchor:none;
 }
 
 /* ═══ SHARED: TOAST ═══ */

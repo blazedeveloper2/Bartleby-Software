@@ -84,16 +84,21 @@
   .settings-btn{margin-top:0;width:auto;flex-shrink:0;padding:8px;border-radius:9px;background:var(--bg-alt);border:1px solid var(--border);color:var(--text-2)}
   .settings-btn>span:not(.app-ico){display:none}
 
-  /* App switcher becomes a segmented control */
+  /* App switcher becomes a segmented control. Icons only: with three apps
+     and counting, the labels were pushing the bar wider than the screen,
+     and the title/aria-label still carry the name. */
   #app-nav{
     display:flex;gap:3px;flex-shrink:0;
     background:var(--bg-alt);border:1px solid var(--border);
     border-radius:10px;padding:3px;
   }
   .app-btn{
-    width:auto;flex-shrink:0;gap:7px;
-    padding:7px 13px;border-radius:7px;font-size:13px;border-color:transparent;
+    width:auto;flex-shrink:0;gap:0;justify-content:center;
+    padding:11px 15px;border-radius:7px;font-size:13px;border-color:transparent;
   }
+  .app-btn .app-lbl{display:none}
+  .app-btn .app-ico{width:20px;height:20px}
+  .app-btn .app-ico svg{width:20px;height:20px}
   .app-btn:hover{background:transparent;color:var(--text-2)}
   .app-btn.active{background:var(--blue);color:#fff}
   .app-btn.active .app-ico{color:#fff}

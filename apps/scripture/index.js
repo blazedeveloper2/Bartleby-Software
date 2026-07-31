@@ -1,451 +1,275 @@
 /* ═══════════════════════════════════════════════════════════
    SCRIPTURE APP
-   A memorisation trainer: a library of verses, a spaced-repetition
-   review session, and a progress view.
 
-   The review card asks for the verse from memory and only then
-   shows it — hints are a ladder you climb deliberately, because a
-   verse you read off the screen is a verse you have not learned.
-   Scheduling lives in srs.js.
+   Library — walk the canon: book → chapter → verses, or type
+   "matthew 25" into the jump box and go straight there.
+   Tap a verse to read it with what the Church Fathers said about it.
+
+   Saved — the verses you kept, grouped by book, with your own note.
+
+   Text and commentary load one book at a time (see bible.js); the
+   app holds no scripture itself.
    ═══════════════════════════════════════════════════════════ */
 
-import { PACKS, PACK_INDEX } from './data.js';
-import { todayStr } from '../../assets/js/storage.js';
+import { load, save, todayStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
 import {
-  vAll, vSave, newVerse, grade, logReview, dueQueue, stats,
-  maturity, MATURITY, GRADES, previewInterval, firstLetters, halfHidden,
-  addDaysStr, daysBetween, isDue,
-} from './srs.js';
+  BOOKS, bookByName, parseRef, loadBook, loadCommentary, refOf,
+} from './bible.js';
 
-/* ── module state ── */
+/* ── storage ── */
+const savedAll = () => load('sc_saved', []);
+const savedSv  = l => save('sc_saved', l);
+
+/* ── state ── */
 let root = null;
-let activeTab = 'review';
+let activeTab = 'library';
+let book = null;              // book name, null = book list
+let chapter = 1;
+let jumpErr = '';
+let focusVerse = null;        // verse number to highlight after a jump
+let openRef = null;           // {book, ch, v} in the reader modal
+let savedFilter = '';
+let busy = false;
 
-/* review session */
-let queue = [];            // verse ids, in the order they'll be asked
-let qi = 0;                // how far through the queue we are
-let revealed = false;
-let hint = 0;              // 0 nothing · 1 first letters · 2 half the words
-let practice = false;      // drilling ahead of schedule: no rescheduling
-let sessionDone = 0;
-
-/* library */
-let libFilter = 'all';
-let libQuery = '';
-let addOpen = false;
-let packOpen = null;
-let viewId = null, editId = null;
-
-const q = sel => root.querySelector(sel);
+const q = s => root.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const byId = id => vAll().find(v => v.id === id);
+const isSaved = ref => savedAll().some(s => s.ref === ref);
 
-/* ═══════════════════ REVIEW TAB ═══════════════════ */
-function startSession(asPractice = false) {
-  const list = vAll();
-  practice = asPractice;
-  queue = asPractice
-    ? list.map(v => v.id)
-    : dueQueue(list);
-  qi = 0; revealed = false; hint = 0; sessionDone = 0;
-  renderReview();
-}
-
-const currentId = () => queue[qi];
-
-function reveal() { revealed = true; renderReview(); }
-function setHint(n) { hint = n; renderReview(); }
-
-function answer(gi) {
-  const list = vAll();
-  const i = list.findIndex(v => v.id === currentId());
-  if (i < 0) { next(); return; }
-
-  /* Practice runs ahead of schedule, so it drills without touching the
-     interval — otherwise an eager evening would push every verse weeks
-     out and quietly stop the app asking for them. */
-  if (!practice) { grade(list[i], gi); vSave(list); }
-  logReview();
-  sessionDone++;
-
-  /* "Again" means ask me once more before we're done here */
-  if (gi === 0) queue.push(currentId());
-  next();
-}
-
-function next() {
-  qi++; revealed = false; hint = 0;
-  renderReview();
-}
-
-function cardHTML(v) {
-  const m = MATURITY[maturity(v)];
-  const body = !revealed
-    ? (hint === 0
-        ? `<div class="sc-prompt">Say it from memory.</div>`
-        : `<div class="sc-verse hint">${esc(hint === 1 ? firstLetters(v.text) : halfHidden(v.text))}</div>`)
-    : `<div class="sc-verse">${esc(v.text)}</div>`;
-
-  const hints = revealed ? '' : `<div class="sc-hints">
-      <button class="sc-hint ${hint === 1 ? 'on' : ''}" data-act="hint" data-n="${hint === 1 ? 0 : 1}">First letters</button>
-      <button class="sc-hint ${hint === 2 ? 'on' : ''}" data-act="hint" data-n="${hint === 2 ? 0 : 2}">Half the words</button>
-    </div>`;
-
-  const foot = revealed
-    ? `<div class="sc-grades">${GRADES.map(g => `
-        <button class="sc-grade" data-act="grade" data-g="${g.g}" style="--gc:var(${g.c})">
-          <span class="sc-grade-l">${g.lbl}</span>
-          <span class="sc-grade-s">${g.sub}</span>
-          <span class="sc-grade-i">${practice ? 'drill' : previewInterval(v, g.g)}</span>
-        </button>`).join('')}</div>`
-    : `<button class="sc-reveal" data-act="reveal">Reveal</button>`;
-
-  return `<div class="sc-card">
-    <div class="sc-card-top">
-      <span class="sc-ref">${esc(v.ref)}</span>
-      <span class="sc-card-meta"><span class="sc-chip" style="color:var(${m.c})">${m.lbl}</span><span class="sc-tr">${esc(v.tr)}</span></span>
+/* ═══════════════════ LIBRARY ═══════════════════ */
+function renderLibrary() {
+  const p = q('#sp-library');
+  p.innerHTML = `
+    <div class="sc-jump">
+      <input class="sc-jump-in" id="sc-jump" placeholder="Jump to — try “matthew 25”" autocomplete="off" spellcheck="false">
+      <button class="sc-jump-go" data-act="jump">Go</button>
     </div>
-    ${body}
-    ${hints}
-    ${foot}
-  </div>`;
+    ${jumpErr ? `<div class="sc-jump-err">${esc(jumpErr)}</div>` : ''}
+    ${book ? chapterViewHTML() : bookListHTML()}`;
+  if (book) paintChapter();
 }
 
-function renderReview() {
-  const p = q('#sp-review'), list = vAll(), s = stats(list);
+function bookListHTML() {
+  const group = (t, label) => `
+    <div class="sc-sec"><span>${label}</span><span class="sc-sec-n">${BOOKS.filter(b => b.t === t).length} books</span></div>
+    <div class="sc-books">${BOOKS.filter(b => b.t === t).map(b =>
+      `<button class="sc-book" data-act="book" data-b="${esc(b.n)}">
+        <span class="sc-book-n">${esc(b.n)}</span><span class="sc-book-c">${b.c}</span>
+      </button>`).join('')}</div>`;
+  return `<div class="sc-card-plain">${group('ot', 'Old Testament')}</div>
+          <div class="sc-card-plain">${group('nt', 'New Testament')}</div>`;
+}
 
-  if (!list.length) {
-    p.innerHTML = `<div class="sc-empty-card">
-      <div class="sc-empty-t">Nothing to learn yet</div>
-      <div class="sc-empty-b">Add a verse of your own, or start from one of the packs — Foundations is ten verses and a good week's work.</div>
-      <button class="sc-btn pri" data-act="go-lib">Open the library</button>
-    </div>`;
+function chapterViewHTML() {
+  const b = bookByName(book);
+  const chips = Array.from({ length: b.c }, (_, i) => i + 1).map(n =>
+    `<button class="sc-ch ${n === chapter ? 'on' : ''}" data-act="chapter" data-n="${n}">${n}</button>`).join('');
+  return `
+    <div class="sc-bookbar">
+      <button class="sc-back" data-act="books">‹ All books</button>
+      <div class="sc-bookbar-t">${esc(b.n)}</div>
+    </div>
+    <div class="sc-card-plain"><div class="sc-chs">${chips}</div></div>
+    <div class="sc-readnav">
+      <button class="sc-nav-b" data-act="ch-shift" data-d="-1" ${chapter <= 1 ? 'disabled' : ''}>‹ Prev</button>
+      <span class="sc-readnav-t">${esc(b.n)} ${chapter}</span>
+      <button class="sc-nav-b" data-act="ch-shift" data-d="1" ${chapter >= b.c ? 'disabled' : ''}>Next ›</button>
+    </div>
+    <div id="sc-chapter"><div class="sc-loading">Loading ${esc(b.n)} ${chapter}…</div></div>`;
+}
+
+/* The chapter body is painted separately because it waits on a fetch. */
+async function paintChapter() {
+  const target = q('#sc-chapter');
+  if (!target) return;
+  const want = `${book} ${chapter}`;
+  let data;
+  try {
+    data = await loadBook(book);
+  } catch {
+    if (q('#sc-chapter') && `${book} ${chapter}` === want)
+      q('#sc-chapter').innerHTML = missingTextHTML();
     return;
   }
+  if (!q('#sc-chapter') || `${book} ${chapter}` !== want) return;   // moved on
 
-  /* mid-session */
-  if (qi < queue.length) {
-    const v = byId(currentId());
-    if (!v) { next(); return; }                       // deleted mid-session
-    const pct = Math.round((qi / queue.length) * 100);
-    p.innerHTML = `<div class="sc-sess">
-        <div class="sc-sess-top">
-          <span>${practice ? 'Practice' : 'Review'} · ${qi + 1} of ${queue.length}</span>
-          <button class="sc-sess-x" data-act="end">End</button>
-        </div>
-        <div class="sc-sess-bar"><i style="width:${pct}%"></i></div>
-      </div>
-      ${cardHTML(v)}`;
-    return;
-  }
+  const verses = data[String(chapter)] || [];
+  if (!verses.length) { q('#sc-chapter').innerHTML = `<div class="sc-empty">No verses found for ${esc(want)}.</div>`; return; }
 
-  /* finished, or nothing was due to begin with */
-  const done = sessionDone > 0;
-  const dueNow = s.due;
-  p.innerHTML = `<div class="sc-empty-card">
-      <div class="sc-done-mark">${done ? '✓' : '·'}</div>
-      <div class="sc-empty-t">${done ? 'Session complete' : dueNow ? `${dueNow} verse${dueNow === 1 ? '' : 's'} ready` : 'Nothing due today'}</div>
-      <div class="sc-empty-b">${
-        done ? `${sessionDone} review${sessionDone === 1 ? '' : 's'} logged.${dueNow ? ` ${dueNow} still due.` : ' The rest come back on their own schedule.'}`
-             : dueNow ? 'Ready when you are.'
-             : s.nextDue ? `Next up ${s.nextDueIn <= 1 ? 'tomorrow' : `in ${s.nextDueIn} days`}, ${fmtDay(s.nextDue)}. Reviewing early does not help you remember longer — but you can drill anyway.`
-             : 'Add a verse to get started.'}</div>
-      <div class="sc-empty-btns">
-        ${dueNow ? `<button class="sc-btn pri" data-act="start">${done ? 'Keep going' : 'Start review'}</button>` : ''}
-        <button class="sc-btn" data-act="practice">Practice all ${list.length}</button>
-      </div>
-    </div>
-    ${statTiles(s)}`;
-}
+  let com = {};
+  try { com = await loadCommentary(book); } catch {}
+  if (!q('#sc-chapter') || `${book} ${chapter}` !== want) return;
 
-const fmtDay = ds => new Date(ds + 'T00:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-
-function statTiles(s) {
-  const tile = (v, l, sub) => `<div class="sc-stat"><div class="sc-stat-v">${v}</div><div class="sc-stat-l">${l}</div><div class="sc-stat-s">${sub || '·'}</div></div>`;
-  return `<div class="sc-stats">
-    ${tile(s.due, 'Due', s.due ? 'ready now' : 'clear')}
-    ${tile(s.total, 'Verses', `${s.known} known`)}
-    ${tile(s.streak, s.streak === 1 ? 'Day' : 'Days', s.reviewedToday ? `${s.reviewedToday} today` : 'streak')}
-  </div>`;
-}
-
-/* ═══════════════════ LIBRARY TAB ═══════════════════ */
-const FILTERS = [
-  { k:'all',      lbl:'All'      },
-  { k:'due',      lbl:'Due'      },
-  { k:'new',      lbl:'New'      },
-  { k:'learning', lbl:'Learning' },
-  { k:'known',    lbl:'Known'    },
-];
-
-function libList() {
-  const query = libQuery.trim().toLowerCase();
-  return vAll().filter(v => {
-    if (libFilter === 'due' && !isDue(v)) return false;
-    if (['new','learning','known'].includes(libFilter) && maturity(v) !== libFilter) return false;
-    if (query && !(v.ref.toLowerCase().includes(query) || v.text.toLowerCase().includes(query))) return false;
-    return true;
-  }).sort((a, b) => a.ref.localeCompare(b.ref, undefined, { numeric: true }));
-}
-
-function dueLabel(v) {
-  if (isDue(v)) return { t:'due now', c:'due' };
-  const d = daysBetween(todayStr(), v.due);
-  return { t: d === 1 ? 'tomorrow' : `in ${d < 30 ? d + 'd' : Math.round(d / 30) + 'mo'}`, c:'' };
-}
-
-function renderLib() {
-  const p = q('#sp-library'), all = vAll(), rows = libList();
-
-  let h = `<div class="sc-lib-head">
-      <input class="sc-search" id="sc-q" placeholder="Search reference or text" value="${esc(libQuery)}" autocomplete="off">
-      <button class="sc-btn pri sm" data-act="add-open">${addOpen ? 'Close' : '＋ Verse'}</button>
+  q('#sc-chapter').innerHTML = `<div class="sc-card-plain sc-chapter">${verses.map((t, i) => {
+    const n = i + 1, ref = refOf(book, chapter, n);
+    const cn = (com[`${chapter}:${n}`] || []).length;
+    return `<div class="sc-v ${focusVerse === n ? 'focus' : ''}" data-act="verse" data-n="${n}">
+      <span class="sc-v-n">${n}</span>
+      <span class="sc-v-t">${esc(t)}</span>
+      <span class="sc-v-m">${isSaved(ref) ? '<span class="sc-v-star">★</span>' : ''}${cn ? `<span class="sc-v-c">${cn}</span>` : ''}</span>
     </div>`;
-
-  if (addOpen) h += addFormHTML();
-
-  h += `<div class="sc-filters">${FILTERS.map(f => {
-    const n = f.k === 'all' ? all.length
-            : f.k === 'due' ? all.filter(isDue).length
-            : all.filter(v => maturity(v) === f.k).length;
-    return `<button class="sc-fil ${f.k === libFilter ? 'on' : ''}" data-act="filter" data-k="${f.k}">${f.lbl}<span>${n}</span></button>`;
   }).join('')}</div>`;
 
-  if (!all.length) {
-    h += `<div class="sc-empty">Your library is empty. Add a verse above, or take one of the packs below.</div>`;
-  } else if (!rows.length) {
-    h += `<div class="sc-empty">Nothing matches that.</div>`;
-  } else {
-    h += `<div class="sc-card-plain"><div class="sc-list">${rows.map(v => {
-      const m = MATURITY[maturity(v)], d = dueLabel(v);
-      return `<div class="sc-row" data-act="view" data-id="${v.id}">
-        <span class="sc-row-dot" style="background:var(${m.c})"></span>
-        <div class="sc-row-b">
-          <div class="sc-row-r">${esc(v.ref)}</div>
-          <div class="sc-row-t">${esc(v.text.slice(0, 90))}${v.text.length > 90 ? '…' : ''}</div>
-        </div>
-        <div class="sc-row-m"><span class="sc-row-due ${d.c}">${d.t}</span><span class="sc-row-tr">${esc(v.tr)}</span></div>
-      </div>`;
-    }).join('')}</div></div>`;
+  if (focusVerse) {
+    const el = q(`.sc-v[data-n="${focusVerse}"]`);
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    focusVerse = null;
   }
-
-  h += packsHTML();
-  p.innerHTML = h;
 }
 
-function addFormHTML() {
-  const v = editId ? byId(editId) : null;
-  return `<div class="sc-form">
-    <div class="sc-form-t">${v ? 'Edit verse' : 'New verse'}</div>
-    <div class="sc-fld"><label>Reference</label>
-      <input class="sc-in" id="sc-ref" placeholder="John 3:16" value="${v ? esc(v.ref) : ''}" autocomplete="off"></div>
-    <div class="sc-fld"><label>Text</label>
-      <textarea class="sc-in sc-ta" id="sc-text" rows="4" placeholder="Paste or type the verse in whichever translation you are learning.">${v ? esc(v.text) : ''}</textarea></div>
-    <div class="sc-fld"><label>Translation</label>
-      <input class="sc-in short" id="sc-tr" placeholder="KJV" value="${v ? esc(v.tr) : 'KJV'}" autocomplete="off"></div>
-    <div class="sc-form-btns">
-      <button class="sc-btn pri" data-act="save-verse">${v ? 'Save changes' : 'Add to library'}</button>
-      <button class="sc-btn" data-act="add-close">Cancel</button>
-    </div>
+function missingTextHTML() {
+  return `<div class="sc-empty sc-missing">
+    <b>Scripture text isn't installed yet.</b><br>
+    The KJV lives in <code>assets/data/kjv/</code> as one file per book.
+    Once those are in place this reads offline with no key and no network.
   </div>`;
 }
 
-function packsHTML() {
-  const have = new Set(vAll().map(v => v.ref));
-  return `<div class="sc-packs">
-    <div class="sc-packs-t">Starter packs <span>King James · public domain</span></div>
-    ${PACKS.map(p => {
-      const missing = p.v.filter(([ref]) => !have.has(ref)).length;
-      const open = packOpen === p.id;
-      return `<div class="sc-pack ${open ? 'open' : ''}">
-        <div class="sc-pack-top" data-act="pack" data-id="${p.id}">
-          <div><div class="sc-pack-n">${p.name}</div><div class="sc-pack-b">${p.blurb}</div></div>
-          <div class="sc-pack-r">${missing ? `<span class="sc-pack-c">${missing} new</span>` : `<span class="sc-pack-c done">added</span>`}<span class="sc-pack-x">${open ? '−' : '+'}</span></div>
-        </div>
-        ${open ? `<div class="sc-pack-body">
-          ${p.v.map(([ref, text]) => `<div class="sc-pack-v ${have.has(ref) ? 'have' : ''}">
-              <div><div class="sc-pack-vr">${esc(ref)}</div><div class="sc-pack-vt">${esc(text.slice(0, 70))}${text.length > 70 ? '…' : ''}</div></div>
-              ${have.has(ref) ? `<span class="sc-pack-tick">✓</span>`
-                              : `<button class="sc-pack-add" data-act="add-one" data-ref="${esc(ref)}">Add</button>`}
-            </div>`).join('')}
-          ${missing ? `<button class="sc-btn pri sm wide" data-act="add-pack" data-id="${p.id}">Add all ${missing}</button>` : ''}
-        </div>` : ''}
-      </div>`;
-    }).join('')}
-  </div>`;
+/* ── navigation ── */
+function openBook(name, ch = 1, v = null) {
+  book = name; chapter = ch; focusVerse = v; jumpErr = '';
+  renderLibrary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function backToBooks() { book = null; jumpErr = ''; renderLibrary(); }
+function setChapter(n) {
+  const b = bookByName(book); if (!b) return;
+  chapter = Math.min(Math.max(1, n), b.c);
+  renderLibrary();
+}
+function doJump() {
+  const raw = q('#sc-jump')?.value || '';
+  if (!raw.trim()) return;
+  const hit = parseRef(raw);
+  if (!hit) { jumpErr = `Couldn't find “${raw.trim()}”. Try a book and chapter, like “John 3” or “ps 23”.`; renderLibrary(); return; }
+  openBook(hit.book, hit.ch, hit.v);
+  if (hit.v) openVerse(hit.book, hit.ch, hit.v);
 }
 
-/* ── library actions ── */
-function saveVerse() {
-  const ref = q('#sc-ref').value.trim();
-  const text = q('#sc-text').value.trim();
-  const tr = q('#sc-tr').value.trim() || 'KJV';
-  if (!ref)  { toast('Give it a reference'); return; }
-  if (!text) { toast('Paste the verse text'); return; }
-
-  const list = vAll();
-  if (editId) {
-    const i = list.findIndex(v => v.id === editId);
-    if (i >= 0) list[i] = { ...list[i], ref, text, tr };
-    vSave(list);
-    editId = null; addOpen = false;
-    renderAll(); toast('Saved');
-    return;
-  }
-  if (list.some(v => v.ref.toLowerCase() === ref.toLowerCase())) { toast(`${ref} is already in your library`); return; }
-  list.push(newVerse(ref, text, tr));
-  vSave(list);
-  addOpen = false;
-  renderAll(); toast(`Added ${ref}`);
+/* ═══════════════════ READER MODAL ═══════════════════ */
+async function openVerse(b, ch, v) {
+  openRef = { book: b, ch, v };
+  q('#sc-ol').classList.add('on');
+  q('#sc-ol-body').innerHTML = `<div class="sc-loading">Loading…</div>`;
+  await paintVerse();
 }
+function closeVerse() { q('#sc-ol')?.classList.remove('on'); openRef = null; }
 
-function addOne(ref) {
-  const entry = PACK_INDEX[ref]; if (!entry) return;
-  const list = vAll();
-  if (list.some(v => v.ref === ref)) return;
-  list.push(newVerse(ref, entry.text, 'KJV', entry.pack));
-  vSave(list);
-  renderAll(); toast(`Added ${ref}`);
-}
+async function paintVerse() {
+  if (!openRef) return;
+  const { book: b, ch, v } = openRef;
+  const ref = refOf(b, ch, v);
+  let text = '', com = [];
+  try { text = (await loadBook(b))[String(ch)]?.[v - 1] || ''; } catch {}
+  try { com = (await loadCommentary(b))[`${ch}:${v}`] || []; } catch {}
+  if (!openRef || refOf(openRef.book, openRef.ch, openRef.v) !== ref) return;
 
-function addPack(id) {
-  const pack = PACKS.find(p => p.id === id); if (!pack) return;
-  const list = vAll(), have = new Set(list.map(v => v.ref));
-  let n = 0;
-  pack.v.forEach(([ref, text]) => { if (!have.has(ref)) { list.push(newVerse(ref, text, 'KJV', id)); n++; } });
-  if (!n) return;
-  vSave(list);
-  renderAll(); toast(`Added ${n} from ${pack.name}`);
-}
+  const saved = isSaved(ref);
+  const note = savedAll().find(s => s.ref === ref)?.note || '';
 
-function delVerse(id) {
-  const v = byId(id); if (!v) return;
-  if (!confirm(`Remove ${v.ref} from your library?\n\nIts review history goes with it.`)) return;
-  vSave(vAll().filter(x => x.id !== id));
-  closeView();
-  renderAll(); toast('Removed');
-}
-
-function resetVerse(id) {
-  const list = vAll(), i = list.findIndex(v => v.id === id);
-  if (i < 0) return;
-  if (!confirm(`Reset ${list[i].ref} to new?\n\nIt goes back to the start of the schedule.`)) return;
-  list[i] = { ...list[i], due: todayStr(), ease: 2.5, interval: 0, reps: 0, lapses: 0, last: null };
-  vSave(list);
-  renderAll(); paintView(); toast('Reset to new');
-}
-
-function editVerse(id) {
-  editId = id; addOpen = true; closeView();
-  switchTab('library'); renderLib();
-  setTimeout(() => q('#sc-ref')?.focus(), 40);
-}
-
-/* ═══════════════════ VERSE MODAL ═══════════════════ */
-function openView(id) { viewId = id; paintView(); q('#sc-ol').classList.add('on'); }
-function closeView() { q('#sc-ol')?.classList.remove('on'); viewId = null; }
-
-function paintView() {
-  if (!viewId) return;
-  const v = byId(viewId); if (!v) { closeView(); return; }
-  const m = MATURITY[maturity(v)], d = dueLabel(v);
-  const stat = (l, val) => `<div class="sc-vs"><span>${l}</span><b>${val}</b></div>`;
   q('#sc-ol-body').innerHTML = `
     <div class="sc-modal-head">
-      <div><div class="sc-modal-r">${esc(v.ref)}</div>
-        <div class="sc-modal-sub"><span class="sc-chip" style="color:var(${m.c})">${m.lbl}</span> · ${esc(v.tr)} · ${d.t}</div></div>
-      <button class="sc-x" data-act="close-view">&times;</button>
+      <div class="sc-modal-r">${esc(ref)}<span class="sc-tr">KJV</span></div>
+      <button class="sc-x" data-act="close-verse">&times;</button>
     </div>
-    <div class="sc-modal-text">${esc(v.text)}</div>
-    <div class="sc-vstats">
-      ${stat('Reviews', v.reps)}
-      ${stat('Lapses', v.lapses)}
-      ${stat('Interval', v.interval ? (v.interval < 30 ? v.interval + 'd' : Math.round(v.interval / 30) + 'mo') : '—')}
-      ${stat('Ease', v.ease.toFixed(2))}
-      ${stat('Added', fmtDay(v.added))}
-      ${stat('Last seen', v.last ? fmtDay(v.last) : 'never')}
-    </div>
+    <div class="sc-modal-text">${text ? esc(text) : '<i>Text not installed.</i>'}</div>
     <div class="sc-modal-btns">
-      <button class="sc-btn" data-act="edit" data-id="${v.id}">Edit</button>
-      <button class="sc-btn" data-act="reset" data-id="${v.id}">Reset</button>
-      <button class="sc-btn dang" data-act="del" data-id="${v.id}">Delete</button>
-    </div>`;
-}
-
-/* ═══════════════════ PROGRESS TAB ═══════════════════ */
-const HM_WEEKS = 16;
-
-function heatmapHTML(s) {
-  const today = todayStr();
-  /* start on the Monday 15 weeks back, so the grid ends on this week */
-  const d0 = new Date(today + 'T00:00:00');
-  d0.setDate(d0.getDate() - ((d0.getDay() + 6) % 7) - 7 * (HM_WEEKS - 1));
-  let cells = '';
-  for (let r = 0; r < 7; r++) {
-    for (let c = 0; c < HM_WEEKS; c++) {
-      const d = new Date(d0); d.setDate(d.getDate() + c * 7 + r);
-      const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      const n = s.log[ds] || 0;
-      const lvl = !n ? 0 : n < 3 ? 1 : n < 8 ? 2 : n < 15 ? 3 : 4;
-      const cls = ds > today ? 'future' : `l${lvl}`;
-      cells += `<div class="sc-hm-c ${cls}${ds === today ? ' today' : ''}" title="${fmtDay(ds)}${ds <= today ? ` · ${n} review${n === 1 ? '' : 's'}` : ''}"></div>`;
-    }
-  }
-  return `<div class="sc-card-plain">
-    <div class="sc-sec"><span>Consistency</span><span class="sc-sec-n">Last ${HM_WEEKS} weeks</span></div>
-    <div class="sc-hm">${cells}</div>
-    <div class="sc-hm-key"><span>less</span><i class="sc-hm-c l0"></i><i class="sc-hm-c l1"></i><i class="sc-hm-c l2"></i><i class="sc-hm-c l3"></i><i class="sc-hm-c l4"></i><span>more</span></div>
-  </div>`;
-}
-
-function upcomingHTML(list) {
-  const days = [];
-  for (let i = 0; i < 7; i++) {
-    const ds = addDaysStr(todayStr(), i);
-    days.push({ ds, n: list.filter(v => v.due === ds || (i === 0 && v.due < ds)).length });
-  }
-  const max = Math.max(1, ...days.map(d => d.n));
-  return `<div class="sc-card-plain">
-    <div class="sc-sec"><span>Coming up</span><span class="sc-sec-n">Next 7 days</span></div>
-    <div class="sc-up">${days.map((d, i) => `
-      <div class="sc-up-c">
-        <div class="sc-up-bar"><i style="height:${d.n ? Math.max(6, (d.n / max) * 100) : 0}%"></i></div>
-        <div class="sc-up-n">${d.n || '·'}</div>
-        <div class="sc-up-d">${i === 0 ? 'Today' : new Date(d.ds + 'T00:00:00').toLocaleDateString('en-US', { weekday:'narrow' })}</div>
-      </div>`).join('')}</div>
-  </div>`;
-}
-
-function renderProgress() {
-  const p = q('#sp-progress'), list = vAll(), s = stats(list);
-  if (!list.length) { p.innerHTML = `<div class="sc-empty">Nothing tracked yet.</div>`; return; }
-
-  const bar = ['known','learning','new'].map(k => {
-    const n = s[k]; if (!n) return '';
-    return `<i style="flex:${n};background:var(${MATURITY[k].c})" title="${n} ${MATURITY[k].lbl}"></i>`;
-  }).join('');
-
-  p.innerHTML = `${statTiles(s)}
-    <div class="sc-card-plain">
-      <div class="sc-sec"><span>Library</span><span class="sc-sec-n">${s.total} verse${s.total === 1 ? '' : 's'}</span></div>
-      <div class="sc-mix">${bar}</div>
-      <div class="sc-mix-key">
-        ${['known','learning','new'].map(k => `<span><i style="background:var(${MATURITY[k].c})"></i>${MATURITY[k].lbl} ${s[k]}</span>`).join('')}
-      </div>
-      <div class="sc-note">A verse counts as known once its interval passes three weeks. That is the scheduler's judgement, not a claim about your soul.</div>
+      <button class="sc-btn ${saved ? '' : 'pri'}" data-act="toggle-save">${saved ? '★ Saved — remove' : '☆ Save this verse'}</button>
     </div>
-    ${upcomingHTML(list)}
-    ${heatmapHTML(s)}
-    <div class="sc-card-plain">
-      <div class="sc-sec"><span>Totals</span></div>
-      <div class="sc-vstats">
-        <div class="sc-vs"><span>Reviews logged</span><b>${s.reviews.toLocaleString('en-US')}</b></div>
-        <div class="sc-vs"><span>Current streak</span><b>${s.streak} day${s.streak === 1 ? '' : 's'}</b></div>
-        <div class="sc-vs"><span>Reviewed today</span><b>${s.reviewedToday}</b></div>
-        <div class="sc-vs"><span>Due right now</span><b>${s.due}</b></div>
-      </div>
+    ${saved ? `<div class="sc-fld sc-notefld">
+        <label>Your note</label>
+        <textarea class="sc-in sc-ta" id="sc-note" rows="2" placeholder="Why this one?">${esc(note)}</textarea>
+        <button class="sc-btn sm" data-act="save-note">Save note</button>
+      </div>` : ''}
+    <div class="sc-com">
+      <div class="sc-sec"><span>The Fathers</span><span class="sc-sec-n">${com.length || 'none'}</span></div>
+      ${com.length ? com.map(c => `
+        <div class="sc-com-e">
+          <div class="sc-com-h"><span class="sc-com-a">${esc(c.author)}</span>${c.time ? `<span class="sc-com-t">${esc(c.time)}</span>` : ''}</div>
+          <div class="sc-com-x">${esc(c.text)}</div>
+          ${c.source ? `<div class="sc-com-s">${esc(c.source)}</div>` : ''}
+        </div>`).join('')
+      : `<div class="sc-empty sc-missing">No commentary on this verse yet. Coverage is uneven by design — the Fathers wrote at length on some verses and passed over others.</div>`}
     </div>`;
+}
+
+/* ═══════════════════ SAVED ═══════════════════ */
+function toggleSave() {
+  if (!openRef) return;
+  const { book: b, ch, v } = openRef, ref = refOf(b, ch, v);
+  const list = savedAll();
+  const i = list.findIndex(s => s.ref === ref);
+  if (i >= 0) { list.splice(i, 1); savedSv(list); toast('Removed'); }
+  else {
+    loadBook(b).then(d => {
+      const text = d[String(ch)]?.[v - 1] || '';
+      const l2 = savedAll();
+      if (!l2.some(s => s.ref === ref)) {
+        l2.push({ ref, book: b, ch, v, text, note: '', added: todayStr() });
+        savedSv(l2); toast(`Saved ${ref}`);
+        paintVerse(); renderSaved(); paintChapter();
+      }
+    }).catch(() => toast('Text not installed'));
+    return;
+  }
+  paintVerse(); renderSaved(); paintChapter();
+}
+
+function saveNote() {
+  if (!openRef) return;
+  const ref = refOf(openRef.book, openRef.ch, openRef.v);
+  const list = savedAll(), i = list.findIndex(s => s.ref === ref);
+  if (i < 0) return;
+  list[i].note = q('#sc-note').value.trim();
+  savedSv(list); renderSaved(); toast('Note saved');
+}
+
+function removeSaved(ref) {
+  savedSv(savedAll().filter(s => s.ref !== ref));
+  renderSaved(); paintChapter();
+  toast('Removed');
+}
+
+function renderSaved() {
+  const p = q('#sp-saved'); if (!p) return;
+  const all = savedAll();
+  const query = savedFilter.trim().toLowerCase();
+  const list = all.filter(s => !query || s.ref.toLowerCase().includes(query) ||
+                               s.text.toLowerCase().includes(query) || (s.note || '').toLowerCase().includes(query));
+
+  if (!all.length) {
+    p.innerHTML = `<div class="sc-empty-card">
+      <div class="sc-empty-t">Nothing saved yet</div>
+      <div class="sc-empty-b">Open the Library, find a verse, and tap the star. Saved verses live here with whatever note you leave on them.</div>
+      <button class="sc-btn pri" data-act="go-lib">Open the Library</button>
+    </div>`;
+    return;
+  }
+
+  /* grouped by book, in canon order rather than alphabetically */
+  const order = Object.fromEntries(BOOKS.map((b, i) => [b.n, i]));
+  const groups = {};
+  list.forEach(s => { (groups[s.book] ||= []).push(s); });
+  const names = Object.keys(groups).sort((a, b) => (order[a] ?? 99) - (order[b] ?? 99));
+
+  p.innerHTML = `
+    <div class="sc-lib-head">
+      <input class="sc-search" id="sc-sq" placeholder="Search saved verses" value="${esc(savedFilter)}" autocomplete="off">
+      <span class="sc-count">${all.length}</span>
+    </div>
+    ${!list.length ? `<div class="sc-empty">Nothing matches that.</div>` : names.map(n => `
+      <div class="sc-card-plain">
+        <div class="sc-sec"><span>${esc(n)}</span><span class="sc-sec-n">${groups[n].length}</span></div>
+        ${groups[n].sort((a, b) => a.ch - b.ch || a.v - b.v).map(s => `
+          <div class="sc-srow">
+            <div class="sc-srow-b" data-act="open-saved" data-b="${esc(s.book)}" data-c="${s.ch}" data-v="${s.v}">
+              <div class="sc-srow-r">${esc(s.ref)}</div>
+              <div class="sc-srow-t">${esc(s.text || '')}</div>
+              ${s.note ? `<div class="sc-srow-note">${esc(s.note)}</div>` : ''}
+            </div>
+            <button class="sc-srow-x" data-act="unsave" data-ref="${esc(s.ref)}" title="Remove">×</button>
+          </div>`).join('')}
+      </div>`).join('')}`;
 }
 
 /* ═══════════════════ TABS + EVENTS ═══════════════════ */
@@ -454,80 +278,61 @@ function switchTab(tab) {
   root.querySelectorAll('.sc .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   root.querySelectorAll('.sc .panel').forEach(p => p.classList.remove('active'));
   q('#sp-' + tab).classList.add('active');
-  if (tab === 'review') renderReview();
-  if (tab === 'progress') renderProgress();
+  if (tab === 'saved') renderSaved();
 }
 
-function renderAll() { renderReview(); renderLib(); renderProgress(); }
-
 function onClick(e) {
-  if (e.target.classList?.contains('sc-overlay')) { closeView(); return; }
+  if (e.target.classList?.contains('sc-overlay')) { closeVerse(); return; }
   const el = e.target.closest('[data-act]');
   if (!el || !root.contains(el)) return;
   const a = el.dataset;
   switch (a.act) {
-    case 'tab':        switchTab(a.tab); break;
-    case 'start':      startSession(false); break;
-    case 'practice':   startSession(true); break;
-    case 'end':        queue = []; qi = 0; renderReview(); break;
-    case 'reveal':     reveal(); break;
-    case 'hint':       setHint(+a.n); break;
-    case 'grade':      answer(+a.g); break;
-    case 'go-lib':     switchTab('library'); break;
-    case 'filter':     libFilter = a.k; renderLib(); break;
-    case 'add-open':   addOpen = !addOpen; editId = null; renderLib();
-                       if (addOpen) setTimeout(() => q('#sc-ref')?.focus(), 40); break;
-    case 'add-close':  addOpen = false; editId = null; renderLib(); break;
-    case 'save-verse': saveVerse(); break;
-    case 'pack':       packOpen = packOpen === a.id ? null : a.id; renderLib(); break;
-    case 'add-one':    addOne(a.ref); break;
-    case 'add-pack':   addPack(a.id); break;
-    case 'view':       openView(a.id); break;
-    case 'close-view': closeView(); break;
-    case 'edit':       editVerse(a.id); break;
-    case 'del':        delVerse(a.id); break;
-    case 'reset':      resetVerse(a.id); break;
+    case 'tab':          switchTab(a.tab); break;
+    case 'book':         openBook(a.b); break;
+    case 'books':        backToBooks(); break;
+    case 'chapter':      setChapter(+a.n); break;
+    case 'ch-shift':     setChapter(chapter + (+a.d)); break;
+    case 'jump':         doJump(); break;
+    case 'verse':        openVerse(book, chapter, +a.n); break;
+    case 'close-verse':  closeVerse(); break;
+    case 'toggle-save':  toggleSave(); break;
+    case 'save-note':    saveNote(); break;
+    case 'unsave':       removeSaved(a.ref); break;
+    case 'open-saved':   switchTab('library'); openBook(a.b, +a.c); openVerse(a.b, +a.c, +a.v); break;
+    case 'go-lib':       switchTab('library'); break;
   }
 }
 
 function onInput(e) {
-  if (e.target.id === 'sc-q') {
-    libQuery = e.target.value;
-    /* repaint only the list, so the field keeps focus and the caret */
-    const p = q('#sp-library'), pos = e.target.selectionStart;
-    renderLib();
-    const again = q('#sc-q'); if (again) { again.focus(); again.setSelectionRange(pos, pos); }
-  }
+  if (e.target.id !== 'sc-sq') return;
+  savedFilter = e.target.value;
+  const pos = e.target.selectionStart;
+  renderSaved();
+  const again = q('#sc-sq');
+  if (again) { again.focus(); again.setSelectionRange(pos, pos); }
 }
 
 function onKeydown(e) {
-  if (e.key === 'Escape' && viewId) { closeView(); return; }
-  if (e.key === 'Enter' && e.target.id === 'sc-ref') { e.preventDefault(); q('#sc-text')?.focus(); }
+  if (e.key === 'Escape' && openRef) { closeVerse(); return; }
+  if (e.key === 'Enter' && e.target.id === 'sc-jump') { e.preventDefault(); doJump(); }
 }
 
-/* Settings can wipe or import data underneath us. Drop the session
-   entirely rather than leaving it reporting on verses that may no
-   longer exist. */
 function onExternalChange() {
   if (!root) return;
-  queue = []; qi = 0; revealed = false; hint = 0; sessionDone = 0; practice = false;
-  viewId = null; closeView();
-  renderAll();
+  closeVerse(); renderSaved(); paintChapter();
 }
 
 /* ═══════════════════ TEMPLATE + LIFECYCLE ═══════════════════ */
 function template() {
   return `<div class="sc">
-    <div class="app-head"><h1>Scripture</h1><p>Memorize · Review · Keep</p></div>
+    <div class="app-head"><h1>Scripture</h1><p>Read · Keep · The Fathers</p></div>
     <nav class="nav"><div class="nav-inner">
-      <button class="tab active" data-act="tab" data-tab="review">Review</button>
-      <button class="tab" data-act="tab" data-tab="library">Library</button>
-      <button class="tab" data-act="tab" data-tab="progress">Progress</button>
+      <button class="tab" data-act="tab" data-tab="saved">Saved</button>
+      <button class="tab active" data-act="tab" data-tab="library">Library</button>
     </div></nav>
     <div class="app-wrap">
-      <div class="panel active" id="sp-review"></div>
-      <div class="panel" id="sp-library"></div>
-      <div class="panel" id="sp-progress"></div>
+      <div class="panel" id="sp-saved"></div>
+      <div class="panel active" id="sp-library"></div>
     </div>
     <div class="sc-overlay" id="sc-ol"><div class="sc-modal" id="sc-ol-body"></div></div>
   </div>`;
@@ -540,18 +345,13 @@ export default {
   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M12 6v7"/><path d="M9.5 8.5h5"/></svg>',
   mount(el) {
     root = el;
-    activeTab = 'review'; queue = []; qi = 0; revealed = false; hint = 0;
-    practice = false; sessionDone = 0;
-    libFilter = 'all'; libQuery = ''; addOpen = false; packOpen = null;
-    viewId = null; editId = null;
-
+    jumpErr = ''; openRef = null; busy = false;
     root.innerHTML = template();
     root.addEventListener('click', onClick);
     root.addEventListener('input', onInput);
     root.addEventListener('keydown', onKeydown);
     window.addEventListener('bs:datachange', onExternalChange);
-
-    renderAll();
+    renderLibrary(); renderSaved();
     switchTab(activeTab);
   },
   unmount() {

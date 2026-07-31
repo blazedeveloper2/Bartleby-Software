@@ -609,7 +609,9 @@ export default {
   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
   mount(el) {
     root = el;
-    activeTab = 'add'; editId = null; viewId = null; addingCat = false; managingCats = false; editCat = null;
+    /* activeTab survives a remount, so returning to the app puts you back
+       on the tab you left rather than on Add. */
+    editId = null; viewId = null; addingCat = false; managingCats = false; editCat = null;
     selCat = null; newCatColor = PALETTE[0]; calOpen = false; calView = curMonth();
     draft = { amt: '', date: todayStr(), note: '' };
     histMonth = 'all'; histCat = 'all'; histDay = '';

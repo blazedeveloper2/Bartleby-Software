@@ -556,10 +556,13 @@ export default {
   id: 'workout',
   name: 'Workout',
   styles: 'apps/workout/workout.css',
-  icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"/><path d="M4 8.5L2.5 10 4 11.5"/><path d="M8.5 4L10 2.5 11.5 4"/><path d="M20 8.5L21.5 10 20 11.5"/><path d="M15.5 20L14 21.5 12.5 20"/><rect x="4" y="7" width="4" height="10" rx="1"/><rect x="16" y="7" width="4" height="10" rx="1"/></svg>',
+  /* A dumbbell read left to right: outer collar, plate, bar, plate, collar. */
+  icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="9.5" width="3" height="5" rx="1.2"/><rect x="4.5" y="6.5" width="3.5" height="11" rx="1.4"/><path d="M8 12h8"/><rect x="16" y="6.5" width="3.5" height="11" rx="1.4"/><rect x="19.5" y="9.5" width="3" height="5" rx="1.2"/></svg>',
   mount(el) {
     root = el;
-    activeTab = 'program'; bwRange = '30'; bwEditDate = null; mmEx = null;
+    /* activeTab deliberately survives a remount — coming back to an app
+       should return you to the tab you left, not to its front page. */
+    bwRange = '30'; bwEditDate = null; mmEx = null;
     root.innerHTML = template();
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);

@@ -24,6 +24,10 @@ const STORAGE_BUDGET = 5 * 1024 * 1024;       // ~5 MB typical localStorage cap
 const root = document.getElementById('app-root');
 const nav = document.getElementById('app-nav');
 const loadedStyles = new Set();
+/* Where each app was scrolled to when you last left it. Switching away to
+   check something else and coming back to the top of a long program list
+   loses your place, so the shell holds the position instead. */
+const scrollPos = new Map();
 let current = null;
 
 /* ── styles ── */
@@ -38,10 +42,12 @@ function loadStyles(href) {
 
 /* ── nav ── */
 function renderNav() {
+  /* The label is hidden on the mobile top bar, so the title carries the
+     name for a long-press and for screen readers. */
   nav.innerHTML = APPS.map(app => `
-    <button class="app-btn" data-app="${app.id}">
+    <button class="app-btn" data-app="${app.id}" title="${app.name}" aria-label="${app.name}">
       <span class="app-ico">${app.icon || ''}</span>
-      <span>${app.name}</span>
+      <span class="app-lbl">${app.name}</span>
       ${app.soon ? '<span class="app-soon">Soon</span>' : ''}
     </button>`).join('');
   nav.querySelectorAll('.app-btn').forEach(btn =>
@@ -52,15 +58,29 @@ function switchTo(id) {
   const app = APPS.find(a => a.id === id) || APPS[0];
   if (current && current.id === app.id) return;
 
-  if (current && typeof current.unmount === 'function') {
-    try { current.unmount(); } catch (e) { console.error(e); }
+  if (current) {
+    scrollPos.set(current.id, window.scrollY);
+    if (typeof current.unmount === 'function') {
+      try { current.unmount(); } catch (e) { console.error(e); }
+    }
   }
   root.innerHTML = '';
-  window.scrollTo(0, 0);
 
   loadStyles(app.styles);
   current = app;
   app.mount(root);
+
+  /* Restore twice on purpose. Reading scrollHeight forces layout, so the
+     page has its real height back and the first jump lands correctly even
+     in a hidden tab, where requestAnimationFrame never fires. The frame
+     afterwards corrects for a stylesheet still arriving on a first visit.
+     `instant` overrides the global scroll-behavior:smooth — returning to
+     a position should look like you never left, not like a ride down. */
+  const y = scrollPos.get(app.id) || 0;
+  const jump = () => window.scrollTo({ top: y, behavior: 'instant' });
+  void document.documentElement.scrollHeight;
+  jump();
+  requestAnimationFrame(jump);
 
   nav.querySelectorAll('.app-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.app === app.id));
