@@ -8,10 +8,10 @@
 import { PROGRAM, MMAP } from './data.js';
 import { load, save, todayStr, dateStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
-import { pctColor } from './standards.js';
+import { pctColor, ord } from './standards.js';
 import {
   setsOf, syncDay, logPR, delSession, setReps, snapshot,
-  isLoggedToday, celebrationHTML, renderRank, liftScores,
+  isLoggedToday, celebrationHTML, renderRank, liftScores, standingOf, resEx,
 } from './rank.js';
 
 /* ── namespaced storage ── */
@@ -23,11 +23,6 @@ const ek   = (d, s, e) => `${d}.${s}.${e}`;
 
 const bwAll = () => load('bp_bw', []);
 const bwSv  = l => save('bp_bw', l);
-
-/* Pull-up bar equipment flag, owned by Settings. When off, exercises
-   with an `alt` render (and track weight) as their no-bar version. */
-const barOn = () => load('bp_bar', true);
-const resEx = ex => (!barOn() && ex.alt) ? ex.alt : ex;
 
 /* ── module state ── */
 let root = null;
@@ -79,7 +74,7 @@ function renderProg() {
         const wtH = wv ? `<span class="ex-wt">${wv}</span>` : '';
         const bH  = ex.b ? `<span class="bench-tag ${ex.bc||''}">${ex.b}</span>` : '';
         const l   = sc.get(ex.n);
-        const nA  = l ? ` style="color:${pctColor(l.pct)}" title="${l.rank.l} · ${Math.round(l.pct)}th percentile at your bodyweight"` : '';
+        const nA  = l ? ` style="color:${pctColor(l.pct)}" title="${l.rank.l} · ${ord(l.pct)} percentile at your bodyweight"` : '';
         h += `<div class="ex-row ${on?'off':''}" data-act="row" data-di="${di}" data-si="${si}" data-ei="${ei}"><span class="ex-rail"></span><div class="ex-chk ${on?'on':''}" data-act="chk" data-k="${k}"></div><span class="ex-idx">${pad(++exN)}</span><div class="ex-body"><div class="ex-name"${nA}>${ex.n}</div><div class="ex-detail"><span class="ex-musc">${ex.m}</span></div></div><div class="ex-right">${wtH}<span class="ex-sets">${ex.s}</span>${bH}</div></div>`;
       });
     });
@@ -179,9 +174,44 @@ function parseMuscles(mStr) {
   return ids;
 }
 
+/* This modal is where you decide whether to add weight, so it carries the
+   same standing the Rank tab does instead of making you go look it up. */
+function mmRankHTML(st) {
+  if (st.state === 'unscored')
+    return `<div class="mm-rank none">No published standard for this movement, so it isn't scored. Track the weight anyway if it helps.</div>`;
+  if (st.state === 'nobw')
+    return `<div class="mm-rank none">Log your bodyweight in the <b>Weight</b> tab — every standard is relative to it.</div>`;
+  if (st.state === 'noweight')
+    return `<div class="mm-rank none">Set a working weight above and this lift starts scoring.</div>`;
+  const l = st.lift;
+  const src = l.srcLabel ? `<span class="rk-lift-src ${l.src}" title="${l.note || ''}">${l.srcLabel}</span>`
+            : (l.note ? `<span class="rk-lift-src info" title="${l.note}">i</span>` : '');
+  const next = l.rank.next && l.need !== null
+    ? `<b>+${l.need < 1 ? l.need.toFixed(1) : Math.round(l.need)} lbs</b> → ${l.rank.next.l} · ${l.rank.next.name}`
+    : 'Past the top of the published scale.';
+  return `<div class="mm-rank">
+    <div class="mm-rank-l" style="color:var(${l.rank.c})">${l.rank.l}</div>
+    <div class="mm-rank-b">
+      <div class="mm-rank-n">${l.rank.name} · ${ord(l.pct)} percentile${src}</div>
+      <div class="mm-rank-s">${next}</div>
+    </div>
+  </div>`;
+}
+
+/* Derived from the weight in bp_wt, so it repaints on open and again after
+   any save that leaves the editor on screen. */
+function paintMMStanding() {
+  if (!mmEx) return;
+  const st = standingOf(mmEx.n);
+  /* carry the row's tint through, so the modal reads as the same lift */
+  q('#mm-name').style.color = st.state === 'scored' ? pctColor(st.lift.pct) : '';
+  q('#mm-rank').innerHTML = mmRankHTML(st);
+}
+
 function openMM(ex) {
   mmEx = ex;
   q('#mm-name').textContent = ex.n;
+  paintMMStanding();
   let info = `<span class="mm-tag">${ex.s}</span>`;
   if (ex.b) info += `<span class="mm-tag">${ex.b}</span>`;
   q('#mm-info').innerHTML = info;
@@ -221,6 +251,7 @@ function setMMWeight(el) {
     return;
   }
   renderRank(root);
+  paintMMStanding();                  // the editor is still open on a changed lift
   toast(`${name}: ${v > 0 ? v + ' lbs' : 'cleared'}`);
 }
 
@@ -510,6 +541,7 @@ function template() {
           <span class="mm-wt-lbl">Working Weight</span>
           <div class="mm-wt-box"><input class="mm-wt-in" id="mm-wt" type="number" step="2.5" min="0" inputmode="decimal" placeholder="—"><span class="mm-wt-u">lbs</span></div>
         </div>
+        <div id="mm-rank"></div>
         <div class="mm-map">${MUSCLE_SVG}</div>
         <div class="mm-muscles"><div class="mm-muscles-title">Target Muscles</div><div class="mm-muscle-list" id="mm-mlist"></div></div>
       </div>

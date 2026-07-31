@@ -96,6 +96,14 @@ export function rankFor(pct) {
    colour continuously — that drift is the signal that it's ready to go up.
    Hard-coded endpoints: both themes put --red and --green in the same
    corners of the wheel, so one scale reads correctly in each. */
+/* 1st / 2nd / 3rd / 11th / 21st — percentiles are read out loud often
+   enough that "51th" is jarring. */
+export function ord(n) {
+  const v = Math.round(n), t = v % 100;
+  if (t >= 11 && t <= 13) return `${v}th`;
+  return `${v}${['th','st','nd','rd'][v % 10] || 'th'}`;
+}
+
 export function pctColor(pct) {
   const t = Math.max(0, Math.min(100, pct || 0)) / 100;
   const h = 2 + t * 140;      /* 2° red → 142° green, passing through amber */

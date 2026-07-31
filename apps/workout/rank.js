@@ -31,6 +31,13 @@ const prSv   = l => save('bp_pr', sortByDate(l));
 const wts    = () => load('bp_wt', {});
 const sortByDate = l => [...l].sort((a, b) => a.d.localeCompare(b.d));
 
+/* Pull-up-bar equipment flag, owned by Settings. When it is off, exercises
+   with an `alt` resolve to their no-bar version. Shared with the Program tab
+   so rendering, scoring and the badge counts all agree on which exercises
+   are actually in play. */
+export const barOn = () => load('bp_bar', true);
+export const resEx = ex => (!barOn() && ex.alt) ? ex.alt : ex;
+
 /* Reps-to-failure assumption behind the 1RM estimate. */
 export const REP_OPTS = [5, 8, 10, 12, 15];
 const reps  = () => { const r = load('bp_reps', 10); return REP_OPTS.includes(r) ? r : 10; };
@@ -119,7 +126,7 @@ export function earned(cs, st) {
     minPct: pcts.length ? Math.min(...pcts) : 0,
     spread: pcts.length ? Math.max(...pcts) - Math.min(...pcts) : 999,
     maxRatio: st.lifts.reduce((a, l) => Math.max(a, l.ratio), 0),
-    allLogged: st.totalScorable > 0 && st.scored >= st.totalScorable,
+    allLogged: st.totalScorable > 0 && st.scoredReachable >= st.totalScorable,
   };
   return new Set(BADGES.filter(b => b.t(flat)).map(b => b.id));
 }
@@ -179,12 +186,25 @@ function weightFor(spec, targetRatio, bw, r) {
   return (targetRatio * bw) / (e * (spec.mult || 1));
 }
 
+/* The scored lifts you can actually reach right now. Pull-Ups and Single-Arm
+   Rows are alternates of one another, so exactly one of the two is ever on
+   screen — counting the whole LIFTS table would leave "Full Sheet" one lift
+   short of completable no matter what you log. */
+function reachableLifts() {
+  const out = new Set();
+  PROGRAM.forEach(d => d.sections.forEach(s => s.ex.forEach(e => {
+    const n = resEx(e).n;
+    if (LIFTS[n]) out.add(n);
+  })));
+  return out;
+}
+
 export function strength() {
   const bw = load('bp_bw', []);
   const bodyweight = bw.length ? bw[bw.length - 1].w : null;
-  const r = reps(), w = wts();
+  const r = reps(), w = wts(), reach = reachableLifts();
   const out = { bodyweight, reps: r, lifts: [], unscored: [], overall: 0, rank: rankFor(0),
-                scored: 0, totalScorable: Object.keys(LIFTS).length };
+                scored: 0, scoredReachable: 0, totalScorable: reach.size };
 
   Object.keys(w).forEach(name => {
     if (!LIFTS[name]) out.unscored.push({ name, w: w[name] });
@@ -220,6 +240,9 @@ export function strength() {
   });
 
   out.scored = out.lifts.length;
+  /* A weight left over on the hidden alternate still scores, but it can't
+     count toward finishing the sheet you can currently see. */
+  out.scoredReachable = out.lifts.filter(l => reach.has(l.name)).length;
   if (out.scored) {
     out.lifts.sort((a, b) => b.pct - a.pct);
     out.overall = out.lifts.reduce((a, l) => a + l.pct, 0) / out.scored;
@@ -237,6 +260,16 @@ export function setReps(r) { if (REP_OPTS.includes(+r)) sReps(+r); }
    Empty until a bodyweight and a working weight both exist. */
 export function liftScores() {
   return new Map(strength().lifts.map(l => [l.name, l]));
+}
+
+/* Where a single lift stands, including the reasons it might not have a
+   score. The weight editor has to explain itself rather than just go blank. */
+export function standingOf(name) {
+  if (!LIFTS[name]) return { state: 'unscored' };
+  const st = strength();
+  if (!st.bodyweight) return { state: 'nobw' };
+  const lift = st.lifts.find(l => l.name === name);
+  return lift ? { state: 'scored', lift } : { state: 'noweight' };
 }
 
 /* ═══════════════════ CONSISTENCY STATS ═══════════════════ */

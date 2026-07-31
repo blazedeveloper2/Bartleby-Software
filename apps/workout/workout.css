@@ -100,6 +100,17 @@
 .mm-wt-in::placeholder{color:var(--text-3)}
 .mm-wt-u{font-size:12px;color:var(--text-3);font-weight:600}
 
+/* ── Where this lift stands, right under the input that changes it ── */
+.mm-rank{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--border)}
+.mm-rank-l{font-family:var(--mono);font-size:23px;font-weight:800;letter-spacing:-1px;line-height:1;min-width:30px;text-align:center}
+.mm-rank-b{min-width:0}
+.mm-rank-n{font-size:12.5px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
+.mm-rank-s{font-size:11px;color:var(--text-3);margin-top:3px}
+.mm-rank-s b{color:var(--text-2);font-family:var(--mono)}
+/* the states with nothing to show explain why, rather than going blank */
+.mm-rank.none{display:block;font-size:11.5px;line-height:1.5;color:var(--text-3)}
+.mm-rank.none b{color:var(--text-2)}
+
 /* ── Bodyweight tab ── */
 .bw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
 .bw-stat{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:7px;
