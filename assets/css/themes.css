@@ -30,6 +30,8 @@ html[data-theme="arcade"] {
   --glow:#ff7a18;--glow-2:#ffb43f;
   --sel-bd:#ff7a1855;--ol-bg:#0a0705f0;--btn-hover:#e0620c;
   --map-base:#1a1108;--map-region:#241708;
+  /* body-map tiers: accent, then blended 55% and 28% toward --map-region */
+  --map-p:#ff7a18;--map-s:#9c4d11;--map-t:#61330d;--map-edge:#0a0705;
   --hm-off:#1e1409;--hm-void:#140d07;
   --grid:#2b1d10;
   /* rank bands — need real hue separation, not six shades of orange */
@@ -54,6 +56,7 @@ html[data-theme="dark"] {
   --glow:#3b82f6;--glow-2:#8b5cf6;
   --sel-bd:#3b82f640;--ol-bg:#08090de8;--btn-hover:#2563eb;
   --map-base:#151922;--map-region:#1a1e2a;
+  --map-p:#3b82f6;--map-s:#2c559a;--map-t:#243a63;--map-edge:#08090d;
   --hm-off:#171a26;--hm-void:#12151f;
   --grid:#1c2030;
   --rk-f:#4a5068;--rk-d:#ef4444;--rk-c:#f59e0b;

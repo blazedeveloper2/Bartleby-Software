@@ -77,19 +77,46 @@
 .mm-close:hover{color:var(--text);background:var(--bg-hover)}
 .mm-info{display:flex;gap:8px;padding:12px 20px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
 .mm-tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--border)}
-.mm-map{display:flex;justify-content:center;padding:20px 16px 8px;gap:0}
-.mm-map svg{width:100%;max-width:340px;height:auto}
-.mm-muscles{padding:12px 20px 20px}
+.mm-map{display:flex;justify-content:center;align-items:flex-start;padding:16px 16px 4px;gap:14px}
+.m-side{margin:0;flex:1 1 0;max-width:190px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.m-fig{width:100%;height:auto;display:block}
+.mm-muscles{padding:10px 20px 20px}
 .mm-muscles-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
 .mm-muscle-list{display:flex;flex-wrap:wrap;gap:6px}
-.mm-muscle-chip{font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;background:var(--blue-d);color:var(--blue);border:1px solid var(--sel-bd)}
+.mm-muscle-chip{font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;
+  background:var(--bg);color:var(--text-3);border:1px solid var(--border);cursor:default;transition:all .15s}
+/* Chips wear their own tier, so the list doubles as the legend for the
+   three shades on the figure without spending room on a separate key. */
+.mm-muscle-chip.lvl-1{background:var(--blue-d);color:var(--map-p);border-color:var(--sel-bd)}
+.mm-muscle-chip.lvl-2{color:var(--map-s);border-color:var(--map-t)}
+.mm-muscle-chip.lvl-3{color:var(--text-3)}
+.mm-muscle-chip:hover{border-color:var(--map-p);color:var(--map-p)}
 
 .m-base{fill:var(--map-base);transition:fill .2s}
-.m-region{fill:var(--map-region);transition:fill .25s}
+.m-region{fill:var(--map-region);stroke:none;transition:fill .25s}
+/* Only lit shapes get the hairline. It's what stops two lit neighbours from
+   fusing into one blob — without it the six ab rows read as a single slab —
+   but drawn on the whole body it makes the figure look cracked. */
+.m-region[class*="lvl-"]{stroke:var(--map-edge);stroke-width:.6}
 /* set while openMM() swaps the highlight, so the new one appears instantly */
 .mm-map.no-tx .m-region{transition:none}
-.m-region.lit{fill:var(--blue)}
-.m-label{fill:var(--text-3);font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--font)}
+.m-region.lvl-1{fill:var(--map-p)}
+.m-region.lvl-2{fill:var(--map-s)}
+.m-region.lvl-3{fill:var(--map-t)}
+.m-region.focus{fill:var(--map-p);stroke:var(--text);stroke-width:1.1}
+.m-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
+/* Names the shape under the cursor, or the chip you tapped. Holds its height
+   when empty so the modal doesn't jump as you move across the figure. */
+.m-readout{min-height:18px;text-align:center;font-size:11px;font-weight:600;letter-spacing:.4px;
+  color:var(--text-3);opacity:0;transition:opacity .15s}
+.m-readout.on{opacity:1;color:var(--map-p)}
+
+/* Two figures side by side stop being legible on a narrow phone long before
+   they stop fitting, so stack them and let each one take the full width. */
+@media (max-width:420px){
+  .mm-map{flex-direction:column;align-items:center;gap:10px}
+  .m-side{max-width:230px;width:100%}
+}
 
 /* ── Working-weight editor inside the muscle modal ── */
 .mm-wt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)}

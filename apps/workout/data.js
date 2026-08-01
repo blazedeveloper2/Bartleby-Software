@@ -29,9 +29,9 @@ export const PROGRAM = [
       {n:'Standing Calf Raises',m:'Gastrocnemius, Soleus',s:'2×F'},
     ]},
     {tag:'Core',ex:[
-      {n:'Dumbbell Crunch',m:'Rectus Abdominis, Obliques',s:'2×8-15',b:'Hips On Bench',bc:'bench-flat'},
-      {n:'Weighted Hanging Leg Raises',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
-       alt:{n:'Weighted Reverse Crunches',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
+      {n:'Dumbbell Crunch',m:'Upper Abs, Rectus Abdominis, Obliques',s:'2×8-15',b:'Hips On Bench',bc:'bench-flat'},
+      {n:'Weighted Hanging Leg Raises',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
+       alt:{n:'Weighted Reverse Crunches',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
       {n:'Weighted Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side',b:'DB On Top Hip',bc:'grip'},
     ]},
   ]},
@@ -61,46 +61,67 @@ export const PROGRAM = [
       {n:"Farmer's Carries",m:'Traps, Forearms, Core',s:'2×F'},
     ]},
     {tag:'Core',ex:[
-      {n:'Dumbbell Crunch',m:'Rectus Abdominis, Obliques',s:'2×8-15',b:'Hips On Bench',bc:'bench-flat'},
-      {n:'Weighted Hanging Leg Raises',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
-       alt:{n:'Weighted Reverse Crunches',m:'Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
+      {n:'Dumbbell Crunch',m:'Upper Abs, Rectus Abdominis, Obliques',s:'2×8-15',b:'Hips On Bench',bc:'bench-flat'},
+      {n:'Weighted Hanging Leg Raises',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
+       alt:{n:'Weighted Reverse Crunches',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
       {n:'Weighted Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side',b:'DB On Top Hip',bc:'grip'},
     ]},
   ]},
 ];
 
-/* Muscle name → SVG region id(s) on the body map. */
+/* Muscle name → SVG region id(s) on the body map.
+
+   Every name here resolves EXACTLY — parseMuscles() only falls back to
+   substring matching when a name is missing, and nothing in the program
+   needs that fallback. Adding a muscle string to PROGRAM that isn't a key
+   below is what turns the fallback on, and the fallback is fuzzy enough to
+   light the wrong thing, so add the key instead.
+
+   Names that resolve to overlapping-but-different region sets are the
+   point, not an accident: 'chest' covers both pec heads while 'upper chest'
+   covers only the clavicular one, so an incline press and a flat press draw
+   different pictures. Same for the ab rows and the delt heads. */
 export const MMAP = {
-  'chest':['f-chest-l','f-chest-r'],
-  'upper chest':['f-chest-l','f-chest-r'],
-  'front delts':['f-delt-l','f-delt-r'],
-  'side delts':['f-delt-l','f-delt-r'],
+  'chest':['f-pec-up-l','f-pec-up-r','f-pec-l','f-pec-r'],
+  'upper chest':['f-pec-up-l','f-pec-up-r'],
+  'front delts':['f-delt-a-l','f-delt-a-r'],
+  'side delts':['f-delt-s-l','f-delt-s-r'],
   'rear delts':['b-rdelt-l','b-rdelt-r'],
-  'triceps':['b-tri-l','b-tri-r'],
-  'triceps long head':['b-tri-l','b-tri-r'],
-  'lateral head':['b-tri-l','b-tri-r'],
+  'triceps':['b-tri-long-l','b-tri-long-r','b-tri-lat-l','b-tri-lat-r'],
+  'triceps long head':['b-tri-long-l','b-tri-long-r'],
+  'lateral head':['b-tri-lat-l','b-tri-lat-r'],
   'biceps':['f-bi-l','f-bi-r'],
   'biceps long head':['f-bi-l','f-bi-r'],
   'biceps short head':['f-bi-l','f-bi-r'],
   'short head':['f-bi-l','f-bi-r'],
-  'brachialis':['f-bi-l','f-bi-r'],
-  'brachioradialis':['f-fore-l','f-fore-r'],
-  'forearms':['f-fore-l','f-fore-r'],
+  'brachialis':['f-brach-l','f-brach-r'],
+  'brachioradialis':['f-brad-l','f-brad-r'],
+  /* the flexor mass is on the front, the extensor mass on the back —
+     a loaded grip works both, so 'forearms' lights all four */
+  'forearms':['f-fore-l','f-fore-r','b-fore-l','b-fore-r'],
   'lats':['b-lat-l','b-lat-r'],
   'rhomboids':['b-rhom'],
-  'traps':['f-trap-l','f-trap-r','b-trap-l','b-trap-r','b-trap-m'],
-  'mid traps':['b-trap-l','b-trap-r','b-trap-m'],
+  'traps':['f-trap-l','f-trap-r','b-trap-u-l','b-trap-u-r','b-trap-m'],
+  'mid traps':['b-trap-m'],
   'erectors':['b-erec-l','b-erec-r'],
-  'quads':['f-quad-l','f-quad-r'],
+  'quads':['f-quad-rf-l','f-quad-rf-r','f-quad-vl-l','f-quad-vl-r','f-quad-vm-l','f-quad-vm-r'],
   'hamstrings':['b-ham-l','b-ham-r'],
   'glutes':['b-glute-l','b-glute-r'],
   'adductors':['f-addu-l','f-addu-r'],
-  'gastrocnemius':['b-calf-l','b-calf-r'],
-  'soleus':['b-calf-l','b-calf-r'],
-  'rectus abdominis':['f-abs'],
-  'tva':['f-abs'],
+  'gastrocnemius':['b-gastro-l','b-gastro-r'],
+  'soleus':['b-soleus-l','b-soleus-r'],
+  'rectus abdominis':['f-abs-1-l','f-abs-1-r','f-abs-2-l','f-abs-2-r','f-abs-3-l','f-abs-3-r'],
+  /* The rows overlap on purpose. A crunch bites hardest up top and a leg
+     raise down low, but neither is confined to its half — the middle row
+     belongs to both. */
+  'upper abs':['f-abs-1-l','f-abs-1-r','f-abs-2-l','f-abs-2-r'],
+  'lower abs':['f-abs-2-l','f-abs-2-r','f-abs-3-l','f-abs-3-r'],
+  'tva':['f-tva'],
   'obliques':['f-obli-l','f-obli-r'],
-  'core':['f-abs','f-obli-l','f-obli-r'],
+  'core':['f-abs-1-l','f-abs-1-r','f-abs-2-l','f-abs-2-r','f-abs-3-l','f-abs-3-r',
+          'f-obli-l','f-obli-r','f-tva'],
   'serratus anterior':['f-serra-l','f-serra-r'],
-  'hip flexors':['f-quad-l','f-quad-r'],
+  /* psoas and iliacus, NOT the quads — they run from the lumbar spine and
+     the inner pelvis to the femur, and only rectus femoris crosses the hip */
+  'hip flexors':['f-hipflex-l','f-hipflex-r'],
 };
