@@ -8,11 +8,26 @@
       bodyweight. It cannot be farmed by showing up — only by lifting
       more. See standards.js for the data and its source.
 
-   2. CONSISTENCY (streak, heatmap, milestones). Derived from the two
+   2. CONSISTENCY (streak, heatmap, milestones). Derived from the
       logs this module maintains:
 
-        bp_log  [{d,di,ex,sets}]   completed sessions
-        bp_pr   [{d,ex,from,to}]   working-weight increases
+        bp_log  [{d,di,ex,sets}]     completed sessions
+        bp_pr   [{d,ex,from,to,k,p}] every working-weight change
+        bp_ach  {id:'YYYY-MM-DD'}    the date each milestone was earned
+
+   3. PROOF, which is what keeps the other two honest. A working weight
+      you have typed in is a claim; it becomes a fact when you finish a
+      session that trains it (`p:1`). Until then that lift is PENDING —
+      it moves the estimated letter on screen, but it earns nothing: no
+      milestone, no rank-up, no lbs in the load total.
+
+      That is what makes backing off read correctly. Set 100, find you
+      can't do it, drop to 90: the 100 was never trained, so the increase
+      is rolled back and everything it briefly implied goes with it.
+      Train at 100 for a month and then drop to 90: that increase is
+      history, so it stands, the drop is logged as a back-off which
+      subtracts from the load total, and the milestones you earned stay
+      earned — shown as no longer held rather than quietly deleted.
 
    There is deliberately no XP number. A second score that rises just
    for attendance would compete with the letter and let you feel
@@ -28,6 +43,8 @@ const logAll = () => load('bp_log', []);
 const logSv  = l => save('bp_log', sortByDate(l));
 const prAll  = () => load('bp_pr', []);
 const prSv   = l => save('bp_pr', sortByDate(l));
+const achAll = () => load('bp_ach', {});
+const achSv  = a => save('bp_ach', a);
 const wts    = () => load('bp_wt', {});
 const sortByDate = l => [...l].sort((a, b) => a.d.localeCompare(b.d));
 
@@ -115,7 +132,9 @@ const BADGES = [
   { id:'load500',   cat:3, ico:'peak',   n:'Plus Five Hundred',req:'+500 lbs of load added',         t:s => s.loadAdded >= 500 },
 ];
 
-/* Flatten consistency + strength into the shape the tests above expect. */
+/* Flatten consistency + strength into the shape the tests above expect.
+   `st` is always the PROVEN view — a weight you typed but have not trained
+   unlocks nothing, which is what lets a back-off roll cleanly back. */
 export function earned(cs, st) {
   const pcts = st.lifts.map(l => l.pct);
   const flat = {
@@ -129,6 +148,30 @@ export function earned(cs, st) {
     allLogged: st.totalScorable > 0 && st.scoredReachable >= st.totalScorable,
   };
   return new Set(BADGES.filter(b => b.t(flat)).map(b => b.id));
+}
+
+/* Milestones latch. Reaching B is a thing that happened on a date, so a
+   deload six months later shouldn't silently delete it — it stops being
+   HELD, which the grid says out loud, and that is a different statement.
+
+   Latching only ever reads proven state, which is what makes the rollback
+   complete: a weight you set and backed off before training never unlocked
+   anything, so there is nothing to take away afterwards. */
+function latch(cs, pv) {
+  const held = achAll(), d = todayStr();
+  const now = earned(cs || stats(), pv || strength().proven);
+  let dirty = false;
+  now.forEach(id => { if (!held[id]) { held[id] = d; dirty = true; } });
+  if (dirty) achSv(held);
+  return held;
+}
+
+/* What the grid draws: everything ever earned, everything held right now,
+   and the date each was earned. */
+export function achievements(cs, st) {
+  const now = earned(cs, st.proven);
+  const held = latch(cs, st.proven);
+  return { ids: new Set([...Object.keys(held), ...now]), now, at: held };
 }
 
 /* ═══════════════════ DATES ═══════════════════ */
@@ -146,6 +189,90 @@ export function setsOf(ex) {
   const m = /^(\d+)/.exec(ex.s || '');
   const n = m ? +m[1] : 2;
   return /\/\s*(leg|side|arm)/i.test(ex.s || '') ? n * 2 : n;
+}
+
+/* ═══════════════════ WEIGHT HISTORY ═══════════════════ */
+
+/* Which movements each program day puts under load, resolved for the current
+   pull-up-bar setting. Finishing that day is what proves the weights sitting
+   on those movements. */
+function dayLifts() {
+  return PROGRAM.map(d => {
+    const s = new Set();
+    d.sections.forEach(sec => sec.ex.forEach(e => s.add(resEx(e).n)));
+    return s;
+  });
+}
+
+/* Entries written after this feature always carry a `p`, stamped at the
+   moment a session closes — which is exact, so bumping a weight in the
+   evening after training in the morning stays correctly unproven. Older
+   entries carry none, and fall back to the question the flag stands in for:
+   has a session that trains this lift happened since the weight was set? */
+function provenTest() {
+  const log = logAll(), days = dayLifts();
+  return e => e.k === 'void' ? false
+            : ('p' in e)     ? !!e.p
+            : log.some(s => s.d >= e.d && days[s.di]?.has(e.ex));
+}
+
+/* The corrected reading of bp_pr, and the one asymmetry the whole thing
+   rests on: an increase only counts once you have trained it, a decrease
+   counts the moment you make it. Claims upward have to be earned; you can't
+   quietly hide a drop. Voided entries contribute nothing in either
+   direction, and baselines are a starting point rather than load added.
+
+   netAdded therefore lands on exactly the same number as the proven
+   strength model — it is what you can currently do, minus where you began,
+   and no amount of typing moves it. */
+function weightHistory() {
+  const isProven = provenTest();
+  const entries = prAll().map(e => ({ ...e, proven: isProven(e) }));
+  const byLift = new Map();
+  let grossAdded = 0, givenBack = 0, pendingLoad = 0, prs = 0, backoffs = 0, voids = 0;
+
+  entries.forEach(e => {
+    if (e.k === 'void') { voids++; return; }
+    let L = byLift.get(e.ex);
+    if (!L) byLift.set(e.ex, L = { name: e.ex, base: e.k === 'base' ? e.to : e.from, cur: 0, peak: 0, provenW: 0 });
+    if      (e.k === 'base') { /* a starting point is not load you added */ }
+    else if (e.k === 'down') { givenBack += e.from - e.to; backoffs++; }
+    else if (e.proven) {
+      grossAdded += e.to - e.from;
+      /* only a NEW high is a record — regaining ground you deloaded from
+         is progress, but it isn't a PR */
+      if (e.to > L.peak) prs++;
+    }
+    else pendingLoad += e.to - e.from;              // claimed, not yet earned
+    L.cur = e.to;
+    if (e.to > L.peak) L.peak = e.to;
+    if (e.proven) L.provenW = e.to;
+  });
+  return { entries, byLift, netAdded: grossAdded - givenBack,
+           grossAdded, givenBack, pendingLoad, prs, backoffs, voids };
+}
+
+/* What you have actually trained at, per lift. Never above the current
+   working weight — you can't be proven at 100 while set to 90. */
+function provenMap(w, hist) {
+  const pm = {};
+  Object.keys(w).forEach(n => {
+    const L = hist.byLift.get(n);
+    /* No history at all means the weight predates the log and has never been
+       edited since, so the honest reading is that it's what you already
+       train at. Anything else would wipe a returning user's rank. */
+    pm[n] = L ? Math.min(w[n], L.provenW || 0) : w[n];
+  });
+  return pm;
+}
+
+/* The weight the log currently implies for a lift, which is what a new
+   entry has to hang off — using the raw bp_wt value instead would let the
+   two drift apart and break the telescoping above. */
+function recordedOf(l, name, fallback) {
+  for (let i = l.length - 1; i >= 0; i--)
+    if (l[i].ex === name && l[i].k !== 'void') return l[i].to;
+  return fallback;
 }
 
 /* ═══════════════════ STRENGTH SCORING ═══════════════════ */
@@ -199,18 +326,12 @@ function reachableLifts() {
   return out;
 }
 
-export function strength() {
-  const bw = load('bp_bw', []);
-  const bodyweight = bw.length ? bw[bw.length - 1].w : null;
-  const r = reps(), w = wts(), reach = reachableLifts();
-  const out = { bodyweight, reps: r, lifts: [], unscored: [], overall: 0, rank: rankFor(0),
+/* Score one map of working weights. Called twice — once with what you have
+   set, once with what you have proven — so the two views can never drift
+   apart in their maths. */
+function scoreAll(w, bodyweight, r, reach) {
+  const out = { lifts: [], overall: 0, rank: rankFor(0),
                 scored: 0, scoredReachable: 0, totalScorable: reach.size };
-
-  Object.keys(w).forEach(name => {
-    if (!LIFTS[name]) out.unscored.push({ name, w: w[name] });
-  });
-  out.unscored.sort((a, b) => a.name.localeCompare(b.name));
-
   if (!bodyweight) return out;
 
   Object.keys(LIFTS).forEach(name => {
@@ -253,6 +374,29 @@ export function strength() {
   return out;
 }
 
+export function strength() {
+  const bw = load('bp_bw', []);
+  const bodyweight = bw.length ? bw[bw.length - 1].w : null;
+  const r = reps(), w = wts(), reach = reachableLifts();
+  const hist = weightHistory(), pw = provenMap(w, hist);
+
+  const out = { bodyweight, reps: r, unscored: [], ...scoreAll(w, bodyweight, r, reach) };
+  Object.keys(w).forEach(name => {
+    if (!LIFTS[name]) out.unscored.push({ name, w: w[name] });
+  });
+  out.unscored.sort((a, b) => a.name.localeCompare(b.name));
+
+  /* The same scoring run over proven weights only. This is the view that
+     earns things; the live one above is what you see while you decide. */
+  out.proven = scoreAll(pw, bodyweight, r, reach);
+  out.lifts.forEach(l => { l.provenW = pw[l.name] || 0; l.pending = l.provenW < l.w; });
+  out.pending = out.lifts.filter(l => l.pending);
+  /* Untested weights including unscored movements and the no-bodyweight
+     case, which the pending count on the Progression card still needs. */
+  out.pendingAll = Object.keys(w).filter(n => w[n] > 0 && (pw[n] || 0) < w[n]);
+  return out;
+}
+
 export function setReps(r) { if (REP_OPTS.includes(+r)) sReps(+r); }
 
 /* Scored lifts keyed by exercise name, for callers outside the Rank tab
@@ -286,7 +430,7 @@ function streaksFrom(hits, firstDate) {
 }
 
 export function stats() {
-  const log = logAll(), prs = prAll();
+  const log = logAll(), h = weightHistory();
   const hits = new Set(log.map(e => e.d));
   const firstDate = log.length ? log[0].d : null;
   const { streak, best } = streaksFrom(hits, firstDate);
@@ -310,11 +454,20 @@ export function stats() {
   const bwLog = load('bp_bw', []);
 
   const s = {
-    log, prList: prs, hits, firstDate,
+    log, prList: h.entries, hits, firstDate,
     sessions: log.length,
     sets: log.reduce((a, e) => a + (e.sets || 0), 0),
-    prs: prs.length,
-    loadAdded: prs.reduce((a, p) => a + Math.max(0, p.to - p.from), 0),
+    /* Records, not edits: an increase counts once it clears that lift's
+       previous high AND you have trained it. Load added is net — every
+       back-off comes back off it, every rolled-back increase was never in
+       it, and a weight you have only typed is waiting in pendingLoad. */
+    prs: h.prs,
+    loadAdded: h.netAdded,
+    grossAdded: h.grossAdded,
+    givenBack: h.givenBack,
+    pendingLoad: h.pendingLoad,
+    backoffs: h.backoffs,
+    voids: h.voids,
     streak, best,
     weekDone: weeks.get(dateStr(weekStart(new Date())))?.size || 0,
     weekTarget: WEEK_TARGET,
@@ -333,12 +486,12 @@ export const isLoggedToday = di => logAll().some(e => e.d === todayStr() && e.di
    back out of bp_wt — otherwise before and after are identical and the
    tier-up goes unnoticed. */
 export function snapshot() {
-  const st = strength(), cs = stats();
+  const st = strength(), cs = stats(), pv = st.proven;
   return {
-    rankIdx: st.rank.i,
-    rank: st.rank,
-    lifts: new Map(st.lifts.map(l => [l.name, { i: l.rank.i, rank: l.rank }])),
-    badges: earned(cs, st),
+    rankIdx: pv.rank.i,
+    rank: pv.rank,
+    lifts: new Map(pv.lifts.map(l => [l.name, { i: l.rank.i, rank: l.rank }])),
+    badges: new Set([...Object.keys(achAll()), ...earned(cs, pv)]),
   };
 }
 
@@ -368,21 +521,113 @@ export function syncDay(di, tally) {
   const before = snapshot();
   l.push({ d, di, ex: tally.done, sets: tally.sets });
   logSv(l);
-  return { logged: true, label: PROGRAM[di].label, ...(diff(before, snapshot(), {}) || {}) };
+  proveDay(di);                       // finishing the work is what banks it
+  const after = snapshot();
+  latch();
+  return { logged: true, label: PROGRAM[di].label, ...(diff(before, after, {}) || {}) };
 }
 
-/* A working weight going UP is the only thing that can move the letter.
-   A first-ever entry is a baseline, not an increase. */
-export function logPR(name, from, to, before) {
-  if (!(from > 0) || !(to > from)) return null;
+/* Finishing a day turns the weights on that day's movements from a claim
+   into a fact. Stamped here, at the moment the session closes, so it can't
+   be back-dated by editing a weight later the same evening. */
+function proveDay(di) {
+  const names = dayLifts()[di], w = wts(), l = prAll();
+  let dirty = false;
+  l.forEach(e => {
+    if (e.p || e.k === 'void' || !names?.has(e.ex)) return;
+    if (!(w[e.ex] >= e.to)) return;   // you trained at least what it claims
+    e.p = 1; dirty = true;
+  });
+  if (dirty) prSv(l);
+}
+
+/* Walk back from the newest entry undoing weight that was never trained.
+   Stops dead at the first proven entry: history you actually lifted under
+   does not get rewritten by one bad session. */
+function retractTo(l, name, target, isProven, rolled) {
+  for (let i = l.length - 1; i >= 0; i--) {
+    const e = l[i];
+    if (e.ex !== name || e.k === 'void') continue;
+    if (e.to <= target || isProven(e)) return;
+    e.hi = Math.max(e.hi || 0, e.to);              // what the attempt reached
+    /* a baseline or an in-progress back-off just moves down with you; an
+       increase you only partly gave back is trimmed to what's left */
+    if (e.k === 'base' || e.k === 'down' || e.from < target) { e.to = target; rolled.push(e); return; }
+    e.k = 'void'; rolled.push(e);                  // gone entirely, keep looking
+  }
+}
+
+/* The mirror image. Coming back up from a back-off you never trained under
+   cancels it, rather than logging a fresh "increase" for ground you had. */
+function unBackoff(l, name, target, isProven, rolled) {
+  for (let i = l.length - 1; i >= 0; i--) {
+    const e = l[i];
+    if (e.ex !== name || e.k === 'void') continue;
+    if (e.k !== 'down' || isProven(e)) return;
+    if (target < e.from) { e.to = target; rolled.push(e); return; }
+    e.k = 'void'; rolled.push(e);
+  }
+}
+
+/* Every working-weight change lands here, in both directions.
+
+   Going up is provisional: the entry is written unproven, so a later drop
+   that happens before you ever trained it voids the whole thing instead of
+   leaving a phantom +20 sitting in your load total forever. Going down from
+   a weight that WAS proven is a real back-off — logged, subtracted, kept,
+   because a deload is information rather than an embarrassment. */
+export function logWeight(name, prev, next, before) {
   if (!before) before = snapshot();
-  const l = prAll(), d = todayStr();
-  const same = l.filter(p => p.ex === name && p.d === d).pop();
-  if (same) same.to = to; else l.push({ d, ex: name, from, to });
+  const l = prAll(), d = todayStr(), isProven = provenTest();
+  const rolled = [];
+  const done = kind => {
+    const after = snapshot();
+    latch();
+    return { ...(diff(before, after, {}) || {}),
+             change: { name, from: prev || 0, to: next, kind, rolled } };
+  };
+
+  const has = l.some(e => e.ex === name && e.k !== 'void');
+  const from0 = prev > 0 ? prev : 0;
+
+  /* Clearing the field is untracking the movement, not lifting zero. What
+     you proved stays on the record; what you only claimed does not. */
+  if (!(next > 0)) {
+    l.forEach(e => {
+      if (e.ex !== name || e.k === 'void' || isProven(e)) return;
+      e.hi = Math.max(e.hi || 0, e.to); e.k = 'void'; rolled.push(e);
+    });
+    prSv(l);
+    return done('clear');
+  }
+
+  if (!has) {
+    /* The first weight on a lift is a baseline, not an increase — there is
+       nothing to have improved on. One already sitting in bp_wt predates the
+       log, so it goes in proven: it isn't a claim this edit is making. */
+    l.push({ d, ex: name, from: 0, to: from0 || next, k: 'base', p: from0 ? 1 : 0 });
+    if (!from0) { prSv(l); return done('base'); }
+  }
+
+  const rec = recordedOf(l, name, from0);
+  if (next < rec) retractTo(l, name, next, isProven, rolled);
+  else if (next > rec) unBackoff(l, name, next, isProven, rolled);
+  const now = recordedOf(l, name, from0);          // after any rollback
+
+  if (now < next) {
+    const same = l.filter(e => e.ex === name && e.d === d && !e.k && !isProven(e)).pop();
+    if (same) same.to = next; else l.push({ d, ex: name, from: now, to: next, p: 0 });
+  } else if (now > next) {
+    const same = l.filter(e => e.ex === name && e.d === d && e.k === 'down' && !isProven(e)).pop();
+    if (same) same.to = next; else l.push({ d, ex: name, from: now, to: next, k: 'down', p: 0 });
+  }
   prSv(l);
-  return diff(before, snapshot(), { pr: `${name} → ${to} lbs` });
+  return done(now < next ? 'up' : now > next ? 'down' : rolled.length ? 'rollback' : 'none');
 }
 
+/* Proof isn't unwound here: nothing records WHICH session proved a given
+   weight, and deleting one old entry out of months of training shouldn't be
+   able to un-lift it anyway. */
 export function delSession(d, di) {
   logSv(logAll().filter(e => !(e.d === d && e.di === +di)));
 }
@@ -470,6 +715,7 @@ function heroHTML(st) {
   const rk = st.rank;
   const beat = Math.round(st.overall);
   const nx = rk.next;
+  const pv = st.proven, pend = st.pending.length;
   return `<div class="rk-hero" style="--rc:var(${rk.c})"><span class="rk-scan"></span>
     <div class="rk-hero-top">
       <div class="rk-kicker">Strength Rank</div>
@@ -488,6 +734,13 @@ function heroHTML(st) {
       <span>${nx ? `Next: <b>${nx.l} · ${nx.name}</b> at the ${nx.min}th percentile` : 'Off the top of the published data.'}</span>
       <span class="rk-foot-pct" data-cnt="${st.overall.toFixed(1)}" data-dec="1">0.0</span>
     </div>
+    ${pend ? `<div class="rk-pending">
+      <b>${pend} lift${pend === 1 ? '' : 's'}</b> sitting at a weight you haven't trained yet, so the letter above is
+      an estimate of what you'd rank if ${pend === 1 ? 'it holds' : 'they hold'}.
+      ${pv.scored ? `Confirmed right now: <b style="color:var(${pv.rank.c})">${pv.rank.l}</b> at the ${Math.round(pv.overall)}th percentile.`
+                  : 'Nothing confirmed yet.'}
+      Milestones and rank-ups land when you finish a session that uses ${pend === 1 ? 'it' : 'them'}.
+    </div>` : ''}
   </div>`;
 }
 
@@ -523,7 +776,8 @@ function liftsHTML(st) {
       <div class="rk-lift-top">
         <div class="rk-lift-n">${l.name}${l.srcLabel
             ? `<span class="rk-lift-src ${l.src}" title="${l.note || ''}">${l.srcLabel}</span>`
-            : (l.note ? `<span class="rk-lift-src info" title="${l.note}">i</span>` : '')}</div>
+            : (l.note ? `<span class="rk-lift-src info" title="${l.note}">i</span>` : '')}${l.pending
+            ? `<span class="rk-lift-src pend" title="No completed session at ${l.w} lbs yet${l.provenW ? ` — last trained at ${l.provenW} lbs` : ''}. This row is an estimate until there is one.">Untested</span>` : ''}</div>
         <div class="rk-lift-r" style="color:var(${l.rank.c})">${l.rank.l}</div>
       </div>
       ${bandTrack(l.pct, false)}
@@ -618,28 +872,59 @@ function nextUpHTML(s) {
   return 'Rest up.';
 }
 
-function progressionHTML(s) {
-  const feed = [...s.prList].reverse().slice(0, 8).map((p, i) => `
-    <div class="pg-pr" style="--i:${i}">
-      <div class="pg-pr-ex">${p.ex}</div>
-      <div class="pg-pr-w"><span class="pg-pr-from">${p.from}</span> → ${p.to} <span class="pg-pr-u">lbs</span></div>
-      <div class="pg-pr-up">+${(((p.to - p.from) / p.from) * 100).toFixed(0)}%</div>
-      <div class="pg-pr-d">${fmtD(p.d)}</div>
-    </div>`).join('');
+/* One row of the change feed. Three shapes, because three different things
+   can happen to a working weight and flattening them into "+X%" is exactly
+   the lie this card used to tell. */
+function prRow(p, i) {
+  const vd = p.k === 'void', dn = p.k === 'down';
+  const to = vd ? (p.hi || p.to) : p.to;            // voids show what was attempted
+  const pc = p.from > 0 ? Math.round(((to - p.from) / p.from) * 100) : 0;
+  /* Only an increase can be waiting on proof. A back-off has already taken
+     effect — saying "untested" there would read as "doesn't count yet". */
+  const tag = vd ? 'never trained at it' : (!p.proven && !dn ? 'untested' : '');
+  return `<div class="pg-pr ${vd ? 'void' : ''} ${dn ? 'down' : ''}" style="--i:${i}">
+    <div class="pg-pr-ex">${p.ex}</div>
+    <div class="pg-pr-w"><span class="pg-pr-from">${p.from}</span> → ${to} <span class="pg-pr-u">lbs</span></div>
+    <div class="pg-pr-up">${vd ? 'rolled back' : `${pc > 0 ? '+' : ''}${pc}%`}</div>
+    <div class="pg-pr-d">${fmtD(p.d)}${dn && !vd ? ' · back-off' : ''}${tag ? ` · <span class="pg-pr-tag">${tag}</span>` : ''}</div>
+  </div>`;
+}
+
+function progressionHTML(s, st) {
+  /* Baselines are where a lift started, not progress — they'd bury the feed
+     the day you first fill the sheet in and say nothing. */
+  const feed = s.prList.filter(p => p.k !== 'base').slice(-10).reverse()
+    .map((p, i) => prRow(p, i)).join('');
+
+  const net = Math.round(s.loadAdded * 10) / 10, down = net < 0;
+  const pend = st.pendingAll.length;
+  const notes = [];
+
   const bw = load('bp_bw', []);
-  let bwLine = null;
-  if (bw.length >= 2 && s.loadAdded > 0) {
+  if (bw.length >= 2 && s.grossAdded > 0) {
     const delta = bw[bw.length - 1].w - bw[0].w;
-    bwLine = Math.abs(delta) < 0.5
-      ? `Bodyweight holding steady while adding ${fmtN(s.loadAdded)} lbs of load.`
-      : `${delta < 0 ? 'Down' : 'Up'} ${Math.abs(delta).toFixed(1)} lbs of bodyweight while adding ${fmtN(s.loadAdded)} lbs of load.`;
+    notes.push(Math.abs(delta) < 0.5
+      ? `Bodyweight holding steady while adding ${fmtN(Math.round(net))} lbs of load.`
+      : `${delta < 0 ? 'Down' : 'Up'} ${Math.abs(delta).toFixed(1)} lbs of bodyweight while adding ${fmtN(Math.round(net))} lbs of load.`);
   }
+  if (s.givenBack > 0)
+    notes.push(`Peaked at <b>+${fmtN(Math.round(s.grossAdded))} lbs</b> added, and ${fmtN(Math.round(s.givenBack))} of that has come back off across
+      ${s.backoffs} back-off${s.backoffs === 1 ? '' : 's'} on weight you had already trained. Deloads are real, so they count.`);
+  if (s.voids > 0)
+    notes.push(`<b>${s.voids}</b> increase${s.voids === 1 ? '' : 's'} rolled back — set, then lowered again before a single
+      session ever trained ${s.voids === 1 ? 'it' : 'them'}. ${s.voids === 1 ? 'It was' : 'They were'} never counted.`);
+  if (pend)
+    notes.push(`<b>${pend} weight${pend === 1 ? '' : 's'}</b> still untested${s.pendingLoad > 0
+      ? `, holding <b>${fmtN(Math.round(s.pendingLoad))} lbs</b> out of the total above` : ''}. Finish the session that
+      trains ${pend === 1 ? 'it' : 'them'} and ${pend === 1 ? 'it lands' : 'they land'}.`);
+
   return `<div class="pg-card">
-    <div class="pg-card-head"><div class="pg-card-title">Progression</div><div class="pg-card-note">${s.prs} weight ${s.prs === 1 ? 'increase' : 'increases'}</div></div>
+    <div class="pg-card-head"><div class="pg-card-title">Progression</div>
+      <div class="pg-card-note">${s.prs} personal record${s.prs === 1 ? '' : 's'}</div></div>
     <div class="pg-big">
-      <div class="pg-big-v">+<span data-cnt="${s.loadAdded}" data-fmt="n">0</span><span class="pg-big-u">lbs</span></div>
-      <div class="pg-big-l">Total load added across every lift</div>
-      ${bwLine ? `<div class="pg-big-note">${bwLine}</div>` : ''}
+      <div class="pg-big-v ${down ? 'down' : ''}">${down ? '−' : '+'}<span data-cnt="${Math.abs(net)}" data-fmt="n">0</span><span class="pg-big-u">lbs</span></div>
+      <div class="pg-big-l">Net load added across every lift${s.givenBack > 0 ? ', after back-offs' : ''}</div>
+      ${notes.length ? `<div class="pg-notes">${notes.map(n => `<div class="pg-big-note">${n}</div>`).join('')}</div>` : ''}
     </div>
     ${feed ? `<div class="pg-pr-list">${feed}</div>`
            : `<div class="pg-empty">Raise a working weight in any exercise and it lands here.</div>`}
@@ -647,26 +932,38 @@ function progressionHTML(s) {
 }
 
 function badgesHTML(ach) {
-  const cell = (b, on, i) => `<div class="pg-b ${on ? 'on' : ''}" style="--i:${i}">
-    <div class="pg-b-ico ${on ? 'on' : ''}">${svg(b.ico)}</div>
-    <div class="pg-b-n">${b.n}</div>
-    <div class="pg-b-r">${on ? 'Unlocked' : b.req}</div>
-  </div>`;
+  /* Three states, not two. "Earned" and "still true" stopped being the same
+     thing the moment a back-off could move you back down a letter, and
+     deleting the badge would be pretending the month you held it never
+     happened. */
+  const cell = (b, i) => {
+    const on = ach.ids.has(b.id), held = ach.now.has(b.id);
+    return `<div class="pg-b ${on ? 'on' : ''} ${on && !held ? 'lapsed' : ''}" style="--i:${i}">
+      <div class="pg-b-ico ${on ? 'on' : ''}">${svg(b.ico)}</div>
+      <div class="pg-b-n">${b.n}</div>
+      <div class="pg-b-r">${!on ? b.req
+        : held ? `Unlocked${ach.at[b.id] ? ` · ${fmtD(ach.at[b.id])}` : ''}`
+        : 'Earned · not held now'}</div>
+    </div>`;
+  };
 
   let i = 0;
   const groups = CATS.map((title, ci) => {
     const all = BADGES.filter(b => b.cat === ci);
-    const got = all.filter(b => ach.has(b.id));
+    const got = all.filter(b => ach.ids.has(b.id));
     /* earned first inside each group, so progress reads top-down */
-    const ordered = [...got, ...all.filter(b => !ach.has(b.id))];
+    const ordered = [...got, ...all.filter(b => !ach.ids.has(b.id))];
     return `<div class="pg-b-group">
       <div class="pg-b-gt"><span>${title}</span><span class="pg-b-gc ${got.length === all.length ? 'full' : ''}">${got.length}/${all.length}</span></div>
-      <div class="pg-b-grid">${ordered.map(b => cell(b, ach.has(b.id), i++)).join('')}</div>
+      <div class="pg-b-grid">${ordered.map(b => cell(b, i++)).join('')}</div>
     </div>`;
   }).join('');
 
+  const lapsed = [...ach.ids].filter(id => !ach.now.has(id)).length;
   return `<div class="pg-card">
-    <div class="pg-card-head"><div class="pg-card-title">Achievements</div><div class="pg-card-note">${ach.size}/${BADGES.length}</div></div>
+    <div class="pg-card-head"><div class="pg-card-title">Achievements</div><div class="pg-card-note">${ach.ids.size}/${BADGES.length}</div></div>
+    ${lapsed ? `<div class="pg-b-lapse">${lapsed} of these ${lapsed === 1 ? 'is' : 'are'} no longer true at your current weights.
+      Earning something is a date on the calendar, so ${lapsed === 1 ? 'it stays' : 'they stay'} unlocked — but the card says so rather than pretending.</div>` : ''}
     ${groups}
   </div>`;
 }
@@ -726,7 +1023,7 @@ function slideMarkers(scope) {
 export function renderRank(root) {
   const p = root.querySelector('#p-rank');
   if (!p) return;
-  const st = strength(), s = stats(), ach = earned(s, st);
+  const st = strength(), s = stats(), ach = achievements(s, st);
 
   let h = heroHTML(st);
   h += verseHTML();
@@ -740,7 +1037,7 @@ export function renderRank(root) {
   h += `<div class="pg-card rk-next"><span class="pg-kicker">Next Session</span><div>${nextUpHTML(s)}</div></div>`;
   h += liftsHTML(st);
   h += heatmapHTML(s);
-  h += progressionHTML(s);
+  h += progressionHTML(s, st);
   h += badgesHTML(ach);
   h += historyHTML(s);
   p.innerHTML = h;

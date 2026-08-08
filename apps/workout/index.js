@@ -10,7 +10,7 @@ import { load, save, todayStr, dateStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
 import { pctColor, ord } from './standards.js';
 import {
-  setsOf, syncDay, logPR, delSession, setReps, snapshot,
+  setsOf, syncDay, logWeight, delSession, setReps, snapshot,
   isLoggedToday, celebrationHTML, renderRank, liftScores, standingOf, resEx,
 } from './rank.js';
 import { MUSCLE_SVG } from './bodymap.js';
@@ -225,13 +225,17 @@ function mmRankHTML(st) {
   const next = l.rank.next && l.need !== null
     ? `<b>+${l.need < 1 ? l.need.toFixed(1) : Math.round(l.need)} lbs</b> → ${l.rank.next.l} · ${l.rank.next.name}`
     : 'Past the top of the published scale.';
+  /* This is where you decide to add weight, so it is also where you should
+     be told that deciding isn't the same as doing it. */
+  const pend = l.pending ? `<div class="mm-pend">Untested at <b>${l.w} lbs</b>${l.provenW ? ` — last trained at <b>${l.provenW}</b>` : ''}.
+    This letter is an estimate until you finish a session with it. Back off first and it rolls back, no harm done.</div>` : '';
   return `<div class="mm-rank">
     <div class="mm-rank-l" style="color:var(${l.rank.c})">${l.rank.l}</div>
     <div class="mm-rank-b">
       <div class="mm-rank-n">${l.rank.name} · ${ord(l.pct)} percentile${src}</div>
       <div class="mm-rank-s">${next}</div>
     </div>
-  </div>`;
+  </div>${pend}`;
 }
 
 /* Derived from the weight in bp_wt, so it repaints on open and again after
@@ -279,24 +283,49 @@ function openMM(ex) {
 }
 function closeMM() { q('#mm-ol').classList.remove('on'); mmEx = null; }
 
+/* Say what the edit actually did to the record, which is the whole point of
+   the log being able to walk itself back. "80 → 100 lbs" would be the same
+   sentence whether it stuck or not. */
+function weightToast(res, name, v) {
+  const c = res.change;
+  if (!c) return `${name}: ${v > 0 ? v + ' lbs' : 'cleared'}`;
+  const voided = c.rolled.find(r => r.k === 'void');
+  if (voided)
+    return `Rolled back — ${voided.from} → ${voided.hi || voided.to} lbs was never trained, so it doesn't count`;
+  const rebased = c.rolled.find(r => r.k === 'base');
+  if (rebased)
+    return `${name} starting weight corrected to ${v} lbs · the ${rebased.hi} never counted`;
+  if (c.rolled.length && c.kind !== 'up')
+    return `${name} down to ${v} lbs · the untrained part of that increase came off with it`;
+  switch (c.kind) {
+    case 'up':    return `${name} ${c.from} → ${v} lbs · untested until you train it`;
+    case 'down':  return `Back-off logged · ${name} ${c.from} → ${v} lbs`;
+    case 'base':  return `${name} starting weight ${v} lbs · untested until you train it`;
+    case 'clear': return `${name} cleared`;
+    default:      return `${name}: ${v > 0 ? v + ' lbs' : 'cleared'}`;
+  }
+}
+
 function setMMWeight(el) {
   if (!mmEx) return;
   const name = mmEx.n;
   const before = snapshot();               // must precede the bp_wt write
-  const w = wts(), v = parseFloat(el.value), prev = w[name];
-  if (isNaN(v) || v <= 0) delete w[name]; else w[name] = v;
+  const w = wts(), raw = parseFloat(el.value), v = isNaN(raw) || raw <= 0 ? 0 : raw;
+  const prev = w[name];
+  if (!v) delete w[name]; else w[name] = v;
   sWt(w);
-  const res = logPR(name, prev, v, before);   // only fires on a genuine increase
+  const res = logWeight(name, prev, v, before);
   renderProg();
-  if (res) {
-    renderRank(root);
+  renderRank(root);
+  /* Only a PROVEN change can unlock anything, so this now fires on the
+     session that earns it rather than on the keystroke that claims it. */
+  if (res.rankUp || res.tierUps?.length || res.badges?.length) {
     closeMM();
-    if (!showCelebration(res)) toast(`${name} ${prev} → ${v} lbs`);
+    showCelebration(res);
     return;
   }
-  renderRank(root);
   paintMMStanding();                  // the editor is still open on a changed lift
-  toast(`${name}: ${v > 0 ? v + ' lbs' : 'cleared'}`);
+  toast(weightToast(res, name, v));
 }
 
 /* ═══════════════════ BODYWEIGHT ═══════════════════ */

@@ -137,6 +137,9 @@
 /* the states with nothing to show explain why, rather than going blank */
 .mm-rank.none{display:block;font-size:11.5px;line-height:1.5;color:var(--text-3)}
 .mm-rank.none b{color:var(--text-2)}
+.mm-pend{padding:10px 20px;border-bottom:1px solid var(--border);font-size:11px;line-height:1.55;color:var(--text-3);
+  background:var(--bg);border-left:2px solid var(--amber)}
+.mm-pend b{color:var(--text-2);font-family:var(--mono);font-weight:700}
 
 /* ── Bodyweight tab ── */
 .bw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
@@ -241,6 +244,11 @@
 .rk-hero-foot b{color:var(--text-2);font-weight:600}
 .rk-foot-pct{font-family:var(--mono);font-weight:700;color:var(--rc);flex-shrink:0}
 
+/* an estimate that hasn't been trained yet says so, in the same breath as the letter */
+.rk-pending{margin-top:12px;padding:9px 11px;font-size:11px;line-height:1.55;color:var(--text-3);
+  background:var(--bg);border:1px solid var(--border);border-left:2px solid var(--amber);border-radius:var(--rs)}
+.rk-pending b{color:var(--text-2);font-weight:700}
+
 /* ── percentile band track: widths are to scale, so it's obvious how wide
       "average" is and how narrow "elite" is ── */
 .rk-track{position:relative;margin-top:14px;padding-bottom:2px}
@@ -295,6 +303,7 @@
 .rk-lift-src{font-size:8px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:2px 5px;border-radius:3px;
   cursor:help;flex-shrink:0;background:var(--bg);border:1px solid var(--border-lt);color:var(--text-3)}
 .rk-lift-src.est{color:var(--amber);border-color:var(--amber);opacity:.85}
+.rk-lift-src.pend{color:var(--amber);border-color:var(--amber);background:transparent}
 .rk-lift-src.info{width:14px;padding:2px 0;text-align:center;letter-spacing:0;text-transform:none}
 .rk-lift-r{font-family:var(--mono);font-size:17px;font-weight:700;line-height:1;flex-shrink:0}
 .rk-lift-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;font-size:10px;color:var(--text-3);font-family:var(--mono);flex-wrap:wrap}
@@ -341,6 +350,19 @@
 .pg-pr-u{font-size:9px;color:var(--text-3);font-weight:500}
 .pg-pr-up{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--green);background:var(--green-d);padding:3px 7px;border-radius:4px;white-space:nowrap}
 .pg-pr-d{grid-column:1/-1;font-family:var(--mono);font-size:9px;color:var(--text-3);margin-top:-6px}
+.pg-notes{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pg-notes .pg-big-note{margin-top:0;text-align:left;line-height:1.55;max-width:44ch}
+/* a deload is red because it is a real subtraction; a rollback is grey
+   because it is the record admitting nothing happened at all */
+.pg-pr.down .pg-pr-up{color:var(--red);background:var(--red-d)}
+/* dimmed by colour, not opacity — the arcade theme's tile-in animation
+   fills forwards to opacity:1 and would wash any opacity rule straight out */
+.pg-pr.void .pg-pr-ex{color:var(--text-3);font-weight:500}
+.pg-pr.void .pg-pr-w{text-decoration:line-through;color:var(--text-3)}
+.pg-pr.void .pg-pr-up{color:var(--text-3);background:var(--bg);box-shadow:inset 0 0 0 1px var(--border)}
+.pg-pr-tag{color:var(--amber)}
+.pg-pr.void .pg-pr-tag{color:var(--text-3)}
+.pg-big-v.down{color:var(--red)}
 
 /* ── milestones ── */
 .pg-b-group{margin-bottom:16px}
@@ -361,6 +383,12 @@
 .pg-b-n{font-size:11px;font-weight:700;line-height:1.25}
 .pg-b-r{font-size:9.5px;color:var(--text-3);margin-top:4px;line-height:1.35}
 .pg-b.on .pg-b-r{color:var(--green)}
+/* earned, but no longer true at your current weights — kept, and labelled */
+.pg-b.lapsed{background:transparent;box-shadow:inset 0 0 0 1px var(--amber)}
+.pg-b.lapsed .pg-b-ico{background:transparent;border-color:var(--amber);color:var(--amber)}
+.pg-b.lapsed .pg-b-r{color:var(--amber)}
+.pg-b-lapse{font-size:11px;line-height:1.55;color:var(--text-3);background:var(--bg);border:1px solid var(--border);
+  border-left:2px solid var(--amber);border-radius:var(--rs);padding:9px 11px;margin-bottom:14px}
 
 /* ── session log ── */
 .pg-s-list{margin:0 -14px -14px;border-top:1px solid var(--border)}
