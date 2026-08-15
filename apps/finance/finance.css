@@ -64,6 +64,15 @@
 .fx-in:focus{border-color:var(--green)}
 .fx-note{resize:none;overflow-y:hidden;min-height:42px;max-height:160px;line-height:1.5;display:block}
 
+/* Note autocomplete — past notes matching what's being typed */
+.fx-sug{display:none}
+.fx-sug.on{display:flex;flex-direction:column;margin-top:6px;background:var(--bg);border:1px solid var(--border-lt);border-radius:var(--rs);overflow:hidden}
+.fx-sug-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:none;border:none;border-bottom:1px solid var(--border);padding:9px 11px;color:var(--text);font-family:var(--font);font-size:13px;font-weight:500;text-align:left;cursor:pointer;transition:background .12s}
+.fx-sug-row:last-child{border-bottom:none}
+.fx-sug-row:hover{background:var(--bg-hover)}
+.fx-sug-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx-sug-n{font-family:var(--mono);font-size:10px;color:var(--text-3);flex-shrink:0}
+
 /* Date button + custom calendar */
 .fx-datebtn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:10px 11px;color:var(--text);font-family:var(--font);font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s;text-align:left}
 .fx-datebtn:hover{border-color:var(--border-lt)}

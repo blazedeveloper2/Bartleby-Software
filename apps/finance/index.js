@@ -23,6 +23,7 @@ let editId = null, viewId = null;
 let addingCat = false, managingCats = false, editCat = null;
 let selCat = null, newCatColor = PALETTE[0];
 let draft = { amt: '', date: '', note: '' };
+let noteSugs = [];
 let calOpen = false, calView = '';
 let histMonth = 'all', histCat = 'all', histDay = '';
 let histCalOpen = false, histCalView = '';
@@ -165,7 +166,7 @@ function renderAdd() {
 
       <div class="fx-field fx-field-b"><div class="fx-lbl">Date</div><button class="fx-datebtn ${calOpen ? 'open' : ''}" data-act="cal-toggle"><span>${fmtDateBtn(date)}</span>${CAL_SVG}</button></div>
       ${calOpen ? calGrid(calView) : ''}
-      <div class="fx-field fx-field-b"><div class="fx-lbl">Note <span class="fx-opt">(optional)</span></div><textarea class="fx-in fx-note" id="fx-note" rows="1" placeholder="e.g. lunch with Sam — split the bill three ways" maxlength="200">${esc(draft.note)}</textarea></div>
+      <div class="fx-field fx-field-b"><div class="fx-lbl">Note <span class="fx-opt">(optional)</span></div><textarea class="fx-in fx-note" id="fx-note" rows="1" placeholder="e.g. lunch with Sam — split the bill three ways" maxlength="200">${esc(draft.note)}</textarea><div class="fx-sug" id="fx-sug"></div></div>
 
       <div class="fx-actions">
         <button class="fx-btn pri" data-act="save-tx">${editing ? 'Update Expense' : 'Add Expense'}</button>
@@ -197,6 +198,62 @@ function sizeNote() {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 160) + 'px';
   el.style.overflowY = el.scrollHeight > 160 ? 'auto' : 'hidden';
+}
+
+/* Note autocomplete — notes you've written before, matched against what
+   you're typing. Prefix matches outrank substring matches; ties break by
+   how often the note recurs, then by how recently. Picking one fills the
+   field, so "Costco" is two keys and a tap after the first time. */
+function noteMatches(query) {
+  const qq = query.trim().toLowerCase();
+  if (!qq) return [];
+  const stats = new Map();
+  txAll().forEach(t => {
+    const note = (t.note || '').trim();
+    if (!note) return;
+    const k = note.toLowerCase();
+    const s = stats.get(k);
+    if (s) { s.count++; if (t.d > s.last) { s.last = t.d; s.note = note; } }
+    else stats.set(k, { note, count: 1, last: t.d });
+  });
+  const tier = s => {
+    const k = s.note.toLowerCase();
+    if (k === qq) return -1;  // already typed in full — nothing to fill
+    if (k.startsWith(qq)) return 0;
+    if (k.includes(qq)) return 1;
+    return -1;
+  };
+  return [...stats.values()]
+    .map(s => ({ ...s, tier: tier(s) }))
+    .filter(s => s.tier >= 0)
+    .sort((a, b) => a.tier - b.tier || b.count - a.count || b.last.localeCompare(a.last))
+    .slice(0, 5);
+}
+
+function hideNoteSugs() {
+  noteSugs = [];
+  const box = q('#fx-sug');
+  if (box) { box.innerHTML = ''; box.classList.remove('on'); }
+}
+
+function renderNoteSugs() {
+  const box = q('#fx-sug'), el = q('#fx-note');
+  if (!box || !el) return;
+  noteSugs = noteMatches(el.value);
+  if (!noteSugs.length) { hideNoteSugs(); return; }
+  box.innerHTML = noteSugs.map((s, i) =>
+    `<button class="fx-sug-row" data-act="note-sug" data-i="${i}"><span class="fx-sug-t">${esc(s.note.split('\n')[0])}</span>${s.count > 1 ? `<span class="fx-sug-n">×${s.count}</span>` : ''}</button>`).join('');
+  box.classList.add('on');
+}
+
+function pickNoteSug(i) {
+  const s = noteSugs[+i], el = q('#fx-note');
+  if (!s || !el) return;
+  el.value = s.note;
+  draft.note = s.note;
+  hideNoteSugs();
+  sizeNote();
+  el.focus();
 }
 
 function pickCat(name) {
@@ -564,6 +621,7 @@ function renderAll() { renderAdd(); renderHistory(); renderInsights(); }
 
 function onClick(e) {
   if (e.target.id === 'fx-modal') { closeModal(); return; }
+  if (noteSugs.length && !e.target.closest('#fx-sug') && e.target.id !== 'fx-note') hideNoteSugs();
   const el = e.target.closest('[data-act]');
   if (!el || !root.contains(el)) return;
   const a = el.dataset;
@@ -587,6 +645,7 @@ function onClick(e) {
     case 'cal-shift':     captureDraft(); calView = shiftMonth(calView, +a.d); renderAdd(); break;
     case 'cal-pick':      captureDraft(); draft.date = a.d; calOpen = false; renderAdd(); break;
     case 'cal-today':     captureDraft(); draft.date = todayStr(); calView = curMonth(); calOpen = false; renderAdd(); break;
+    case 'note-sug':      pickNoteSug(a.i); break;
     case 'save-tx':       saveTx(); break;
     case 'cancel-edit':   cancelEdit(); break;
     case 'view-tx':       viewTx(a.id); break;
@@ -647,7 +706,7 @@ function onKeydown(e) {
   // #fx-note is a textarea — let Enter add a new line
 }
 function onInput(e) {
-  if (e.target.id === 'fx-note') sizeNote();
+  if (e.target.id === 'fx-note') { sizeNote(); renderNoteSugs(); }
   else if (e.target.id === 'fx-color') updateNewColor(e.target.value);
 }
 function onOver(e) { const arc = e.target.closest?.('.fx-arc'); if (arc && root.contains(arc)) donutHover(arc.dataset.name); }
@@ -684,6 +743,7 @@ export default {
     editId = null; viewId = null; addingCat = false; managingCats = false; editCat = null;
     selCat = null; newCatColor = PALETTE[0]; calOpen = false; calView = curMonth();
     draft = { amt: '', date: todayStr(), note: '' };
+    noteSugs = [];
     histMonth = 'all'; histCat = 'all'; histDay = ''; histCalOpen = false; histCalView = '';
     insMode = 'month'; insMonth = curMonth(); insYear = curYear(); insPickOpen = false;
 
