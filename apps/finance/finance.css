@@ -216,6 +216,47 @@
 .fx-leg-pct{font-family:var(--mono);font-size:11px;color:var(--text-3);min-width:34px;text-align:right}
 .fx-leg-amt{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);min-width:60px;text-align:right}
 
+/* ── Repeat notes: what the category donut structurally can't tell you ── */
+.fx-nt-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.fx-nt-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.fx-nt-head .fx-chart-title{margin-bottom:0}
+.fx-nt-sum{font-family:var(--mono);font-size:10.5px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.fx-nt-list{display:flex;flex-direction:column;gap:2px}
+
+.fx-nt{border-radius:var(--rs);transition:background .13s}
+.fx-nt.open{background:var(--bg)}
+.fx-nt-hd{display:block;width:100%;text-align:left;background:none;border:none;padding:9px 8px;cursor:pointer;
+  font-family:var(--font);border-radius:var(--rs);transition:background .13s}
+.fx-nt:not(.open) .fx-nt-hd:hover{background:var(--bg-hover)}
+.fx-nt-top{display:flex;align-items:baseline;gap:9px}
+.fx-nt-n{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-nt-c{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text-3);flex-shrink:0}
+.fx-nt-t{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--text);flex-shrink:0;font-variant-numeric:tabular-nums}
+/* one bar per note, scaled against the biggest — the ranking is the point,
+   so it should be visible without reading any of the numbers */
+.fx-nt-bar{display:block;height:4px;border-radius:2px;background:var(--bg-alt);margin:7px 0 6px;overflow:hidden}
+.fx-nt-bar i{display:block;height:100%;border-radius:2px;transition:width .3s ease}
+.fx-nt-sub{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--text-3)}
+.fx-nt-sub span{white-space:nowrap}
+
+.fx-nt-det{padding:2px 8px 12px}
+.fx-nt-spark{display:flex;align-items:flex-end;gap:3px;height:52px;padding-top:4px}
+.fx-nt-spark i{flex:1;border-radius:2px 2px 0 0;min-height:2px}
+.fx-nt-spark i.nil{background:var(--border)}
+.fx-nt-spark-l{display:flex;justify-content:space-between;gap:8px;margin-top:5px;
+  font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text-3)}
+.fx-nt-rows{margin-top:11px;border-top:1px solid var(--border)}
+.fx-nt-rows>div{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid var(--border)}
+.fx-nt-rows>div:last-child{border-bottom:none}
+.fx-nt-rows span{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);flex-shrink:0}
+.fx-nt-rows b{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--text-2);text-align:right}
+
+.fx-nt-more{width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--border);color:var(--text-2);
+  font-family:var(--font);font-size:12px;font-weight:600;padding:9px;border-radius:var(--rs);cursor:pointer;transition:all .13s}
+.fx-nt-more:hover{background:var(--bg-hover);color:var(--text)}
+.fx-nt-foot{margin-top:11px;padding-top:10px;border-top:1px solid var(--border);font-size:10.5px;line-height:1.5;color:var(--text-3)}
+
 .fx-chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px 14px 8px;margin-bottom:14px}
 .fx-chart-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:14px}
 .fx-chart-svg{width:100%;height:200px;display:block;overflow:visible}

@@ -29,6 +29,7 @@ let histMonth = 'all', histCat = 'all', histDay = '';
 let histCalOpen = false, histCalView = '';
 let insMode = 'month', insMonth = '', insYear = '';
 let insPickOpen = false, insPickYear = '';
+let insNote = '', insNoteAll = false;
 
 const q = s => root.querySelector(s);
 const curMonth = () => todayStr().slice(0, 7);
@@ -552,6 +553,136 @@ function insPicker() {
   const years = []; for (let y = +curYear(); y >= +curYear() - 9; y--) years.push(y);
   return `<div class="fx-picker"><div class="ins-mo-grid">${years.map(y => `<button class="ins-mo ${String(y) === insYear ? 'sel' : ''}" data-act="ins-pick-yr" data-y="${y}">${y}</button>`).join('')}</div></div>`;
 }
+/* ═══════════════════ WHERE THE MONEY GOES (notes) ═══════════════════ */
+/* The category says "Groceries". The note says "Costco". Grouping by the note
+   is what turns a pile of rows into "10 trips, $412" — which is the question
+   people actually ask about their own spending, and the one the category
+   donut structurally cannot answer.
+
+   Matching is on a normalised first line, so "Trader Joe's", "trader joes"
+   and "Trader Joes " are one place rather than three. Deliberately no fuzzy
+   matching beyond that: "Costco" and "Costco gas" are arguably different
+   trips, and a grouping you can't predict is worse than one you can. */
+const firstLine = t => (t.note || '').split('\n')[0].trim();
+const noteKey = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim();
+const daysApart = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+/* The sparkline spans a year, so its end labels need the year on them —
+   "September … August" alone reads as five months, backwards. */
+const ymShort = ym => {
+  const [y, m] = ym.split('-').map(Number);
+  return `${new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short' })} '${String(y).slice(2)}`;
+};
+
+function noteGroups(list) {
+  const map = new Map();
+  list.forEach(t => {
+    const raw = firstLine(t), k = noteKey(raw);
+    if (!k) return;
+    let g = map.get(k);
+    if (!g) map.set(k, g = { key: k, label: raw, total: 0, count: 0, cats: {} });
+    g.total += t.amt; g.count++;
+    g.cats[t.cat] = (g.cats[t.cat] || 0) + t.amt;
+  });
+  return [...map.values()].sort((a, b) => b.total - a.total || b.count - a.count);
+}
+const topCat = g => Object.entries(g.cats).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+
+/* The rows above follow the period selector; this panel does not. "How much
+   have I ever spent at Costco, and is it climbing" is a different question
+   from "what did July cost", and scoping it to the period would leave the
+   sparkline redrawing itself every time you paged a month. */
+function noteDetailHTML(g, color) {
+  const mine = txAll().filter(t => noteKey(firstLine(t)) === g.key);
+  if (!mine.length) return '';
+
+  const months = []; let ym = curMonth();
+  for (let i = 0; i < 12; i++) { months.unshift(ym); ym = shiftMonth(ym, -1); }
+  const rows = months.map(m => ({ ym: m, total: sum(mine.filter(t => t.d.startsWith(m))) }));
+  const peak = Math.max(...rows.map(r => r.total), 1);
+  const bars = rows.map(r => `<i style="height:${Math.max(2, r.total / peak * 100).toFixed(1)}%;${
+    r.total ? `background:${color}` : ''}" class="${r.total ? '' : 'nil'}"
+    title="${monthLabel(r.ym)} · ${r.total ? fmtMoney(r.total) : 'nothing'}"></i>`).join('');
+
+  const ds = mine.map(t => t.d).sort();
+  const first = ds[0], last = ds[ds.length - 1];
+  const span = daysApart(first, last);
+  const every = mine.length > 1 && span > 0 ? Math.round(span / (mine.length - 1)) : null;
+  const cats = Object.entries(g.cats).sort((a, b) => b[1] - a[1]);
+
+  return `<div class="fx-nt-det">
+    <div class="fx-nt-spark">${bars}</div>
+    <div class="fx-nt-spark-l"><span>${ymShort(rows[0].ym)}</span><span>Last 12 months</span><span>${ymShort(rows[11].ym)}</span></div>
+    <div class="fx-nt-rows">
+      <div><span>All time</span><b>${fmtMoney(sum(mine))} · ${mine.length} purchase${mine.length === 1 ? '' : 's'}</b></div>
+      <div><span>Largest</span><b>${fmtMoney(Math.max(...mine.map(t => t.amt)))}</b></div>
+      <div><span>First</span><b>${fmtDateShort(first)}</b></div>
+      <div><span>Latest</span><b>${fmtDateShort(last)} · ${daysApart(last, todayStr())} days ago</b></div>
+      ${every ? `<div><span>Cadence</span><b>about every ${every} day${every === 1 ? '' : 's'}</b></div>` : ''}
+      ${cats.length > 1 ? `<div><span>Categories</span><b>${cats.map(([n, v]) => `${esc(n)} ${fmtMoney(v)}`).join(' · ')}</b></div>` : ''}
+    </div>
+  </div>`;
+}
+
+function noteRowHTML(g, peak, periodTotal) {
+  const color = catColor(topCat(g));
+  const open = insNote === g.key;
+  const cats = Object.keys(g.cats);
+  return `<div class="fx-nt ${open ? 'open' : ''}">
+    <button class="fx-nt-hd" data-act="ins-note" data-k="${g.key}">
+      <span class="fx-nt-top">
+        <span class="fx-nt-n">${esc(g.label)}</span>
+        <span class="fx-nt-c">×${g.count}</span>
+        <span class="fx-nt-t">${fmtMoney(g.total)}</span>
+      </span>
+      <span class="fx-nt-bar"><i style="width:${(peak ? g.total / peak * 100 : 0).toFixed(1)}%;background:${color}"></i></span>
+      <span class="fx-nt-sub">
+        <span>${fmtMoney(g.total / g.count)} each</span>
+        <span>${esc(topCat(g))}${cats.length > 1 ? ` +${cats.length - 1}` : ''}</span>
+        <span>${periodTotal ? Math.round(g.total / periodTotal * 100) : 0}% of this period</span>
+      </span>
+    </button>
+    ${open ? noteDetailHTML(g, color) : ''}
+  </div>`;
+}
+
+function noteTrendHTML(list, periodTotal) {
+  const groups = noteGroups(list);
+  const repeat = groups.filter(g => g.count >= 2);
+  const once = groups.filter(g => g.count === 1);
+  const noNote = list.filter(t => !firstLine(t)).length;
+
+  if (!repeat.length) {
+    const why = !list.length
+      ? 'No spending in this period.'
+      : !groups.length
+      ? 'None of these purchases carry a note. Write where the money actually went — “Costco”, “Trader Joe’s” — and the repeats total themselves up here.'
+      : 'No note repeats in this period yet. Reuse the same note and it starts adding up here — the note field suggests ones you have written before, so it is one tap after the first time.';
+    return `<div class="fx-nt-card">
+      <div class="fx-chart-title">Where It Keeps Going</div>
+      <div class="fx-empty" style="padding:24px 8px">${why}</div>
+    </div>`;
+  }
+
+  const shown = insNoteAll ? repeat : repeat.slice(0, 6);
+  const peak = repeat[0].total;
+  const repTotal = repeat.reduce((a, g) => a + g.total, 0);
+  const foot = [];
+  if (once.length) foot.push(`${once.length} other note${once.length === 1 ? '' : 's'} appear${once.length === 1 ? 's' : ''} once (${fmtMoney(once.reduce((a, g) => a + g.total, 0))})`);
+  if (noNote) foot.push(`${noNote} purchase${noNote === 1 ? '' : 's'} without a note`);
+
+  return `<div class="fx-nt-card">
+    <div class="fx-nt-head">
+      <div class="fx-chart-title">Where It Keeps Going</div>
+      <div class="fx-nt-sum">${fmtMoney(repTotal)} across ${repeat.length} repeat note${repeat.length === 1 ? '' : 's'}${
+        periodTotal ? ` · ${Math.round(repTotal / periodTotal * 100)}% of the period` : ''}</div>
+    </div>
+    <div class="fx-nt-list">${shown.map(g => noteRowHTML(g, peak, periodTotal)).join('')}</div>
+    ${repeat.length > 6 ? `<button class="fx-nt-more" data-act="ins-note-all">${
+      insNoteAll ? 'Show top 6' : `Show all ${repeat.length}`}</button>` : ''}
+    ${foot.length ? `<div class="fx-nt-foot">${foot.join(' · ')}.</div>` : ''}
+  </div>`;
+}
+
 function renderInsights() {
   const all = txAll();
   let list, label, showNav = true, canNext;
@@ -591,6 +722,7 @@ function renderInsights() {
     h += `<div class="fx-donut-card"><div class="fx-empty">No spending in this period.</div></div>`;
   }
 
+  h += noteTrendHTML(list, total);
   h += `<div class="fx-chart-card"><div class="fx-chart-title">Last 12 Months</div>${trendSVG(last12())}</div>`;
   q('#fp-insights').innerHTML = h;
 }
@@ -660,6 +792,8 @@ function onClick(e) {
     case 'ins-pick-year': insPickYear = String(+insPickYear + (+a.d)); renderInsights(); break;
     case 'ins-pick-month':insMonth = a.ym; insPickOpen = false; renderInsights(); break;
     case 'ins-pick-yr':   insYear = a.y; insPickOpen = false; renderInsights(); break;
+    case 'ins-note':      insNote = insNote === a.k ? '' : a.k; renderInsights(); break;
+    case 'ins-note-all':  insNoteAll = !insNoteAll; renderInsights(); break;
     case 'arc':           donutHover(el.dataset.name); break;
     case 'arc-leg':       donutHover(a.name); break;
   }
@@ -746,6 +880,7 @@ export default {
     noteSugs = [];
     histMonth = 'all'; histCat = 'all'; histDay = ''; histCalOpen = false; histCalView = '';
     insMode = 'month'; insMonth = curMonth(); insYear = curYear(); insPickOpen = false;
+    insNote = ''; insNoteAll = false;
 
     root.innerHTML = template();
     root.addEventListener('click', onClick);
