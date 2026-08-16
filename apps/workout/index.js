@@ -12,6 +12,7 @@ import { pctColor, ord } from './standards.js';
 import {
   setsOf, syncDay, logWeight, delSession, setReps, snapshot,
   isLoggedToday, celebrationHTML, renderRank, liftScores, standingOf, resEx,
+  resetPanel, resetToggle, resetToggleAll, resetSelection, applyReset, resetDismiss,
 } from './rank.js';
 import { MUSCLE_SVG } from './bodymap.js';
 import { renderStudy, studySetSec, studySetGoal, studySetMuscle, studySetKcal } from './study.js';
@@ -507,6 +508,23 @@ function progDelete(d, di) {
    and with them the Program tab's colours. */
 function rkSetReps(r) { setReps(r); renderRank(root); renderProg(); }
 
+/* ═══════════════════ RESET ═══════════════════ */
+/* The dialog names every record and its size before anything happens.
+   "Are you sure?" on its own is not consent to delete four months of
+   sessions — you have to be able to see that that is what it is. */
+function doReset() {
+  const sel = resetSelection();
+  if (!sel.length) return;
+  const lines = sel.map(t => `  •  ${t.n} — ${t.cl}`).join('\n');
+  if (!confirm(`Reset the following? This cannot be undone.\n\n${lines}\n\n`
+    + `Everything else — your program, equipment settings and theme — is left alone.`)) return;
+  applyReset(sel.map(t => t.id));
+  /* Weights and bodyweight both move the whole app: row colours on Program,
+     the chart on Weight, every card on Rank. Repaint all three. */
+  renderProg(); renderBW(); renderRank(root);
+  toast(sel.length === 1 ? `${sel[0].n} reset` : `${sel.length} records reset`);
+}
+
 /* ═══════════════════ TABS ═══════════════════ */
 function switchTab(tab) {
   activeTab = tab;
@@ -543,6 +561,11 @@ function onClick(e) {
     case 'lv-close':  closeCelebration(); break;
     case 'pg-del':    progDelete(a.d, a.di); break;
     case 'rk-reps':   rkSetReps(+a.r); break;
+    case 'rk-reset-open':  resetPanel(true, root); break;
+    case 'rk-reset-close': resetPanel(false, root); break;
+    case 'rk-reset-tgl':   resetToggle(a.k, root); break;
+    case 'rk-reset-all':   resetToggleAll(root); break;
+    case 'rk-reset-go':    doReset(); break;
     case 'st-sec':    studySetSec(a.k, root); break;
     case 'st-goal':   studySetGoal(a.k, root); break;
     case 'st-muscle': studySetMuscle(a.k, root); break;
@@ -629,6 +652,7 @@ export default {
     /* activeTab deliberately survives a remount — coming back to an app
        should return you to the tab you left, not to its front page. */
     bwRange = '30'; bwEditDate = null; mmEx = null;
+    resetDismiss();
     root.innerHTML = template();
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);

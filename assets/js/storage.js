@@ -12,6 +12,13 @@ export function save(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+/* Drop a key entirely rather than writing an empty value into it — a reset
+   should also hand the storage back, and every reader here already falls
+   back sensibly when a key is missing. */
+export function remove(key) {
+  try { localStorage.removeItem(key); } catch {}
+}
+
 // Local-date YYYY-MM-DD (NOT toISOString, which returns UTC and rolls a day
 // ahead of local time in western timezones after ~4-5pm).
 export const dateStr = (d = new Date()) =>

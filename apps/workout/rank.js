@@ -36,7 +36,7 @@
 
 import { PROGRAM } from './data.js';
 import { LIFTS, SRC_LABEL, TIER_PCT, rankFor, verseFor } from './standards.js';
-import { load, save, todayStr, dateStr } from '../../assets/js/storage.js';
+import { load, save, remove, todayStr, dateStr } from '../../assets/js/storage.js';
 
 /* ── storage ── */
 const logAll = () => load('bp_log', []);
@@ -632,6 +632,59 @@ export function delSession(d, di) {
   logSv(logAll().filter(e => !(e.d === d && e.di === +di)));
 }
 
+/* ═══════════════════ RESET ═══════════════════ */
+
+/* Scoped rather than one button. "I want the streak to start again" and "I
+   want my rank back to zero" are different requests, and collapsing them
+   into a single Erase Everything makes the smaller one cost the larger one.
+   Each record says what is computed from it, so the choice can be made on
+   what you'd lose rather than on the name of a storage key. */
+let resetOpen = false;
+const resetSel = new Set();
+
+const RESETS = [
+  { id:'log', key:'bp_log', n:'Session log', u:'session',
+    d:'Streaks, the heatmap, hard-set totals and every consistency milestone are counted out of this.' },
+  { id:'pr',  key:'bp_pr',  n:'Weight-change history', u:'entry', p:'entries',
+    d:'Personal records, net load added, back-offs — and the proof that separates a weight you typed from one you have trained. Clearing it makes every current weight read as a fresh starting point.' },
+  { id:'wt',  key:'bp_wt',  n:'Working weights', u:'lift',
+    d:'The letter is computed from these. Clearing them takes every lift back to unscored and the rank to none.' },
+  { id:'bw',  key:'bp_bw',  n:'Bodyweight log', u:'entry', p:'entries',
+    d:'Every standard is relative to bodyweight, so the rank disappears until you log one again. The nutrition targets in Study go with it.' },
+  { id:'ach', key:'bp_ach', n:'Milestone dates', u:'unlocked', p:'unlocked',
+    d:'Only the dates. Anything still true at your current numbers re-earns itself on the next render — to genuinely re-lock a milestone, clear what earned it as well.' },
+  { id:'chk', key:'bp_chk', n:'Checkmarks', u:'ticked', p:'ticked',
+    d:"Today's ticks on the Program tab. Nothing is scored from them, so this one costs you nothing." },
+];
+
+const resetCount = {
+  log: () => logAll().length,
+  pr:  () => prAll().length,
+  wt:  () => Object.keys(wts()).length,
+  bw:  () => load('bp_bw', []).length,
+  ach: () => Object.keys(achAll()).length,
+  chk: () => Object.values(load('bp_chk', {})).filter(Boolean).length,
+};
+
+const plural = (r, c) => c === 1 ? r.u : (r.p || r.u + 's');
+
+export function resetTargets() {
+  return RESETS.map(r => {
+    const c = resetCount[r.id]();
+    return { id:r.id, n:r.n, d:r.d, c, cl: c ? `${c} ${plural(r, c)}` : 'empty' };
+  });
+}
+
+/* Only ever what was asked for. Settings the reset has no business touching
+   — the equipment flag, the rep assumption, the theme — live in their own
+   keys and are deliberately not in the table above. */
+export function applyReset(ids) {
+  const want = new Set(ids);
+  RESETS.forEach(r => { if (want.has(r.id)) remove(r.key); });
+  resetSel.clear();
+  resetOpen = false;
+}
+
 /* ═══════════════════ CELEBRATION ═══════════════════ */
 /* Twelve sparks on fixed angles — deterministic, so it looks composed
    rather than random, and it only ever fires on a rank-up or unlock. */
@@ -986,6 +1039,87 @@ function historyHTML(s) {
   </div>`;
 }
 
+/* ── reset card ── */
+/* Closed it is one line and a button; open it is a checklist. Kept at the
+   bottom of the tab because it is the one control here that destroys
+   something, and it should take a scroll and two taps to reach. */
+function resetHTML() {
+  const tg = resetTargets();
+  const held = tg.filter(t => t.c > 0);
+
+  if (!resetOpen) {
+    return `<div class="pg-card rk-reset">
+      <div class="pg-card-head"><div class="pg-card-title">Reset</div>
+        <div class="pg-card-note">${held.length}/${tg.length} hold data</div></div>
+      <div class="rk-rs-intro">Start a section over — the streak, the rank, the milestones, or all of it.
+        Nothing here can be undone, so export a backup from <b>Settings</b> first if there is any chance
+        you want it back.</div>
+      <button class="rk-rs-open" data-act="rk-reset-open">Reset Progress…</button>
+    </div>`;
+  }
+
+  const rows = tg.map(t => `
+    <button class="rk-rs ${resetSel.has(t.id) ? 'on' : ''}" data-act="rk-reset-tgl" data-k="${t.id}"
+            ${t.c ? '' : 'disabled'}>
+      <span class="rk-rs-box"></span>
+      <span class="rk-rs-b">
+        <span class="rk-rs-h"><span class="rk-rs-n">${t.n}</span><span class="rk-rs-c">${t.cl}</span></span>
+        <span class="rk-rs-d">${t.d}</span>
+      </span>
+    </button>`).join('');
+
+  const allOn = held.length > 0 && held.every(t => resetSel.has(t.id));
+  return `<div class="pg-card rk-reset open">
+    <div class="pg-card-head"><div class="pg-card-title">Reset</div>
+      <button class="rk-rs-all" data-act="rk-reset-all">${allOn ? 'Select none' : 'Select everything'}</button></div>
+    <div class="rk-rs-list">${rows}</div>
+    <div class="rk-rs-warn">Whatever you tick is deleted from this device for good. A backup exported from
+      <b>Settings</b> before this is the only way back.</div>
+    <div class="rk-rs-btns">
+      <button class="rk-rs-go" data-act="rk-reset-go" ${resetSel.size ? '' : 'disabled'}>${resetGoLabel()}</button>
+      <button class="rk-rs-x" data-act="rk-reset-close">Cancel</button>
+    </div>
+  </div>`;
+}
+
+const resetGoLabel = () =>
+  resetSel.size ? `Reset ${resetSel.size} Selected` : 'Nothing Selected';
+
+/* Ticking a box repaints two elements. A full renderRank() here would rebuild
+   the tab under your finger and restart every counter on it. */
+export function resetToggle(id, root) {
+  if (resetSel.has(id)) resetSel.delete(id); else resetSel.add(id);
+  root.querySelector(`[data-act="rk-reset-tgl"][data-k="${id}"]`)?.classList.toggle('on', resetSel.has(id));
+  const go = root.querySelector('.rk-rs-go');
+  if (go) { go.textContent = resetGoLabel(); go.disabled = !resetSel.size; }
+  const all = root.querySelector('.rk-rs-all');
+  const held = resetTargets().filter(t => t.c > 0);
+  if (all) all.textContent = held.length && held.every(t => resetSel.has(t.id)) ? 'Select none' : 'Select everything';
+}
+
+export function resetToggleAll(root) {
+  const held = resetTargets().filter(t => t.c > 0);
+  const allOn = held.length > 0 && held.every(t => resetSel.has(t.id));
+  resetSel.clear();
+  if (!allOn) held.forEach(t => resetSel.add(t.id));
+  renderRank(root);
+}
+
+export function resetPanel(open, root) {
+  resetOpen = open;
+  if (!open) resetSel.clear();
+  renderRank(root);
+  if (open) root.querySelector('.rk-reset')?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+}
+
+/* The targets currently ticked, for the confirm dialog that names them. */
+export const resetSelection = () => resetTargets().filter(t => resetSel.has(t.id));
+
+/* Unlike the active tab, an open delete checklist should NOT survive leaving
+   the app — coming back to boxes you ticked yesterday is how an accident
+   happens. Called from mount(). */
+export function resetDismiss() { resetOpen = false; resetSel.clear(); }
+
 const CALM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* Skip the animated path entirely when it can't be seen: a hidden tab never
    fires requestAnimationFrame, which would leave counters reading zero. */
@@ -1040,6 +1174,7 @@ export function renderRank(root) {
   h += progressionHTML(s, st);
   h += badgesHTML(ach);
   h += historyHTML(s);
+  h += resetHTML();
   p.innerHTML = h;
   tickCounts(p);
   slideMarkers(p);
