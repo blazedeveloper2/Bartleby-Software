@@ -102,7 +102,11 @@ function macros() {
   const proRate = goal() === 'cut' ? 2.2 : 1.8;
   const pro   = Math.round(kg * proRate);
   const perMeal = Math.round(kg * 0.4);
-  const fatFloor = Math.round(kg * 0.5);
+  /* The card states the floor as 20% of calories, so the number it prints has
+     to BE that. 0.5 g/kg alone lands under 20% at any reasonable calorie
+     intake, which had the page contradicting itself — whichever of the two is
+     higher is the honest floor. */
+  const fatFloor = Math.max(Math.round(kg * 0.5), Math.round(kcal * 0.20 / 9));
   const fat   = Math.max(fatFloor, Math.round(kcal * 0.25 / 9));
   const carb  = Math.max(0, Math.round((kcal - pro * 4 - fat * 9) / 4));
   const fibre = Math.round(kcal / 1000 * 14);
@@ -146,7 +150,7 @@ function calcHTML() {
         goal() === 'cut' ? 'the top of it, because protein is what protects muscle in a deficit'
                          : 'the middle of it — anywhere in the band is fine'}.`],
       ['Per meal', `About <b>${m.perMeal} g</b> across four or more meals to clear the daily total comfortably.`],
-      ['Fat floor', `Do not go under <b>${m.fatFloor} g</b>. Below roughly 20% of calories from fat is where the hormone data turns bad.`],
+      ['Fat floor', `Do not go under <b>${m.fatFloor} g</b> — that is 20% of the calories above, and below roughly 20% is where the hormone data turns bad.`],
       ['Fibre', `<b>${m.fibre} g</b> a day at this calorie level.`],
       ['Goal', `${m.g.lbl} — ${m.g.rate}.`],
     ])}
@@ -174,9 +178,11 @@ function nutritionHTML() {
     overrides that — you can hit every protein target perfectly and still not grow if the total
     is too low, or grow mostly fat if it's far too high.</p>
     <p>The important and counter-intuitive part: <b>a bigger surplus does not build more muscle.</b>
-    The rate at which you can add muscle tissue is capped by training and recovery, not by how much
-    food is available. Everything past that cap is stored as fat. A controlled surplus tends to put on
-    roughly two parts muscle to one part fat; an aggressive one drifts to one-to-one or worse.</p>
+    The rate at which you can add muscle tissue is capped by training, recovery and training age — not
+    by how much food is available. Everything past that cap is stored as fat. The muscle-to-fat ratio a
+    given person gets varies too much to quote a figure for, but the direction is consistent across
+    trials: a controlled surplus and an aggressive one add similar lean mass, and the aggressive one
+    adds substantially more fat on top.</p>
     ${dl([
       ['Surplus', 'Roughly 10–20% over maintenance, which is usually 200–500 kcal. A 2019 review argues the low end, 200–300, gets the same muscle with less fat.'],
       ['Rate', 'About 0.25–0.5 lb a week once you are past beginner. Faster than that is mostly fat.'],
@@ -477,28 +483,32 @@ function trainingHTML() {
       ['Add sets', 'Increases weekly volume. The slowest-acting lever and the easiest one to overdo.'],
       ['Improve form', 'A deeper range or a controlled eccentric at the same load is a genuine increase in demand, even though nothing on the dumbbell changed.'],
     ])}
-    ${note('Increments matter.',
-      `A weighted-crunch EMG study found that load changes smaller than about 20% of 1RM didn't
-       meaningfully change recruitment. Creeping up 2.5 lb at a time on a movement you can already
-       do for fifteen is not overload, it's noise.`)}
+    ${note('An increment only counts relative to the load.',
+      `2.5 lb onto a 20 lb curl is a 12% jump and plainly real; the same 2.5 lb onto a 100 lb hinge is
+       inside the noise of how you slept. This is why the reliable method is <b>double progression</b>:
+       hold the weight until you clear the top of your rep range on every set, then add the smallest
+       jump you own and let the reps fall back. Reps carry the progress between weight increases —
+       waiting for the weight to move is what makes progress look stalled when it isn't.`)}
   `, 'If nothing gets harder, nothing changes.')}
 
   ${card('Volume', `
     <p>Counted as <b>hard sets per muscle per week</b> — sets taken close enough to failure to matter.
     This is the dose, and it has the most direct relationship with growth of any variable you control.</p>
     ${dl([
-      ['The band', 'Roughly 10–20 hard sets per muscle per week. Schoenfeld\'s work found 10+ clearly beating fewer than 10.'],
+      ['The band', 'Roughly 10–20 hard sets per muscle per week. Schoenfeld\'s dose-response meta-analysis graded it: under 5 sets, 5–9, and 10+, with 10+ producing close to double the growth of the lowest group.'],
       ['More is not linear', 'Returns flatten and eventually reverse, because volume you cannot recover from is volume that costs you.'],
       ['Count indirect work', 'Rows train biceps, presses train triceps. Counting only isolation work badly undercounts what the arms are actually getting.'],
       ['Build up, do not jump', 'Add sets over weeks. Landing on twenty from eight in one go tends to produce fatigue rather than growth.'],
     ])}
-    ${srcs([['Schoenfeld et al. — training frequency meta-analysis','https://pubmed.ncbi.nlm.nih.gov/30558493/']])}
+    ${srcs([['Schoenfeld, Ogborn & Krieger 2017 — weekly volume dose-response meta-analysis','https://pubmed.ncbi.nlm.nih.gov/27433992/']])}
   `, 'The dose. The single most useful number to track.')}
 
   ${card('Load and Reps', `
     <p>This is where most training arguments happen, and the evidence is far less dramatic than the
-    arguments. A 2024 meta-analysis of 47 studies found <b>no significant difference in hypertrophy</b>
-    between low-load and high-load training when sets were taken to failure.</p>
+    arguments. Schoenfeld's 2017 meta-analysis pooled 21 studies and found <b>no significant difference
+    in hypertrophy</b> between low-load (≤60% 1RM) and high-load training when sets were taken to
+    failure. The same analysis found gains in <i>1RM strength</i> clearly favoured the heavy work — so
+    load is close to irrelevant for size and very relevant for strength.</p>
     <p>Growth is roughly equivalent anywhere from about <b>5 to 35 reps</b>, provided two conditions
     hold: the set goes close to failure, and the load is at least about 30% of your one-rep maximum.
     Below that threshold the set stops being a strength stimulus and becomes an endurance one.</p>
@@ -508,7 +518,10 @@ function trainingHTML() {
       ['15–30 reps', 'Grows muscle just as well when genuinely taken to failure. The catch is that failure at 30 reps is deeply unpleasant and easy to stop short of.'],
       ['The 30% floor', 'This is exactly why bodyweight core work stalls: once you can do forty reps, the load is below the threshold and the set no longer qualifies.'],
     ])}
-    ${srcs([['Stronger by Science — the hypertrophy rep range, fact or fiction','https://www.strongerbyscience.com/hypertrophy-range-fact-fiction/']])}
+    ${srcs([
+      ['Schoenfeld et al. 2017 — low- vs high-load meta-analysis','https://pubmed.ncbi.nlm.nih.gov/28834797/'],
+      ['Stronger by Science — the hypertrophy rep range, fact or fiction','https://www.strongerbyscience.com/hypertrophy-range-fact-fiction/'],
+    ])}
   `, 'Wider than the internet thinks.')}
 
   ${card('Proximity to Failure', `
@@ -527,11 +540,15 @@ function trainingHTML() {
     ${dl([
       ['Frequency', 'Twice a week per muscle is a sensible default, but the meta-analytic finding is that frequency does not meaningfully change hypertrophy once weekly volume is equated. It is a scheduling tool, not a growth lever.'],
       ['Range of motion', 'Train the full range you can control. Partial reps in the shortened position are the least useful thing you can do.'],
-      ['Long muscle lengths', 'Emphasising the stretched portion is promising and popular, but the evidence is genuinely mixed — a 2025 trial found lengthened partials produced similar adaptations to full range in trained lifters. Full range remains the safe default.'],
-      ['Rest between sets', 'Two to three minutes on compounds, sixty to ninety seconds on isolation. Short rests cost you reps, and reps are the thing you are trying to accumulate.'],
+      ['Long muscle lengths', 'Emphasising the stretched portion is promising and popular, but it is not the free win it gets sold as — a 2025 within-participant trial in trained lifters found lengthened partials produced adaptations similar to full range, not better. Where partials do clearly win is against partials in the shortened position. Full range remains the safe default.'],
+      ['Rest between sets', 'Two to three minutes on compounds, and at least a minute on isolation — the trials that compared one minute against three found three better for growth. Short rests cost you reps, and reps are the thing you are trying to accumulate.'],
       ['Tempo', 'Control the lowering phase, roughly two seconds. Beyond that, deliberately slow tempos mostly reduce the load you can use.'],
     ])}
-    ${srcs([['Stronger by Science — lengthened partials and stretch-mediated hypertrophy','https://www.strongerbyscience.com/stretch-mediated-hypertrophy/']])}
+    ${srcs([
+      ['Wolf et al. 2025 — lengthened partials vs full range in trained lifters','https://pubmed.ncbi.nlm.nih.gov/39959841/'],
+      ['Schoenfeld et al. — training frequency meta-analysis','https://pubmed.ncbi.nlm.nih.gov/30558493/'],
+      ['Stronger by Science — lengthened partials and stretch-mediated hypertrophy','https://www.strongerbyscience.com/stretch-mediated-hypertrophy/'],
+    ])}
   `, 'The dials that matter less than you would guess.')}`;
 }
 
@@ -544,15 +561,18 @@ function recoveryHTML() {
     The numbers here are unusually blunt for exercise science.</p>
     ${dl([
       ['One night, none', 'A single night of total deprivation cut muscle protein synthesis by about 18%, dropped testosterone around 24% and raised cortisol about 21% the following morning.'],
-      ['Chronic restriction', 'Five to six hours a night across several days reduced synthesis by close to 20%.'],
-      ['Injury', 'Athletes sleeping under 8 hours were roughly 1.7 times more likely to get hurt.'],
+      ['Restriction', 'Five nights at four hours in bed cut myofibrillar synthesis by roughly 18% — and, usefully, high-intensity interval work during those days partly held it up.'],
+      ['Injury', 'Adolescent athletes sleeping under 8 hours were about 1.7 times more likely to be injured.'],
       ['Target', '7–9 hours for adults, 8–10 while training hard.'],
     ])}
     ${note('Put this in proportion.',
       `Losing a fifth of your protein synthesis to poor sleep is a larger effect than almost any
        supplement or programming tweak will ever give you. Sleep is not the boring answer, it is the
        big one.`)}
-    ${srcs([['Sleep deprivation and muscle protein synthesis','https://researchexperts.utmb.edu/en/publications/the-effect-of-acute-sleep-deprivation-on-skeletal-muscle-protein-/']])}
+    ${srcs([
+      ['Lamon et al. 2021 — acute sleep deprivation, protein synthesis and hormones','https://researchexperts.utmb.edu/en/publications/the-effect-of-acute-sleep-deprivation-on-skeletal-muscle-protein-/'],
+      ['Saner et al. 2020 — five nights of sleep restriction and myofibrillar synthesis','https://pubmed.ncbi.nlm.nih.gov/32078168/'],
+    ])}
   `, 'The one that beats every supplement on this page.')}
 
   ${card('Soreness Is Not the Scoreboard', `
