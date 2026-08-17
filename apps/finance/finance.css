@@ -288,3 +288,115 @@
   .fx-donut-wrap{gap:12px}
   .fx-nav-lbl{min-width:120px}
 }
+
+/* ═══════════════════════════════════════════════════════════
+   NET WORTH TAB — the total itself, logged over and over.
+   ═══════════════════════════════════════════════════════════ */
+
+/* First run: no hero, no chart, nothing to average — just the ask. */
+.nw-intro{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:18px 16px;margin-bottom:14px}
+.nw-intro-t{font-size:15px;font-weight:700;letter-spacing:.2px;color:var(--text);margin-bottom:7px}
+.nw-intro-p{font-size:13px;line-height:1.65;color:var(--text-2)}
+
+/* ── Hero: the number the whole tab exists for ── */
+.nw-hero{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:20px 18px;margin-bottom:10px}
+.nw-hero-l{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
+.nw-hero-v{font-family:var(--mono);font-size:34px;font-weight:700;letter-spacing:-1.2px;color:var(--text);
+  line-height:1.15;margin-top:7px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.nw-hero-sub{font-size:11.5px;color:var(--text-3);margin-top:5px}
+.nw-hero-d{display:flex;align-items:baseline;flex-wrap:wrap;gap:7px;margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--border);font-family:var(--mono);font-size:14px;font-weight:700;
+  font-variant-numeric:tabular-nums}
+.nw-hero-d span{font-family:var(--font);font-size:11px;font-weight:500;color:var(--text-3);letter-spacing:.2px}
+.nw-hero-d.up{color:var(--green)}
+.nw-hero-d.dn{color:var(--red)}
+.nw-hero-d.flat{color:var(--text-3);font-family:var(--font);font-size:11.5px;font-weight:500}
+
+/* ── Window deltas ── */
+.nw-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.nw-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rs);padding:12px 8px;text-align:center}
+.nw-stat-v{font-family:var(--mono);font-size:17px;font-weight:700;line-height:1.1;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.nw-stat-v.up{color:var(--green)}
+.nw-stat-v.dn{color:var(--red)}
+.nw-stat-v.flat{color:var(--text-3)}
+.nw-stat-l{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);margin-top:6px}
+.nw-stat-s{font-family:var(--mono);font-size:9px;color:var(--text-3);opacity:.7;margin-top:3px}
+
+/* ── Chart ──
+   Paths in a stretched SVG, labels and dots in HTML on top of it, so the
+   line spans any width while 9px text stays 9px. See networth.js. */
+.nw-chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.nw-chart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+.nw-chart-head .fx-chart-title{margin-bottom:0}
+.nw-range{display:flex;gap:2px;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;padding:2px;flex-shrink:0}
+.nw-r-btn{padding:5px 10px;border-radius:6px;background:none;border:none;color:var(--text-3);
+  font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .13s}
+.nw-r-btn:hover:not(:disabled):not(.sel){color:var(--text-2)}
+.nw-r-btn:disabled{opacity:.3;cursor:default}
+.nw-r-btn.sel{background:var(--blue);color:#fff}
+
+.nw-plot{padding-left:52px}
+.nw-plot-in{position:relative;height:190px}
+.nw-svg{width:100%;height:100%;display:block}
+.nw-yl{position:absolute;right:calc(100% + 9px);transform:translateY(-50%);
+  font-family:var(--mono);font-size:9.5px;color:var(--text-3);white-space:nowrap;font-variant-numeric:tabular-nums}
+/* HTML rather than <circle>: the SVG is scaled non-uniformly, which would
+   press a circle into an ellipse on any width but 600px. */
+.nw-dot{position:absolute;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);
+  box-shadow:0 0 0 2px var(--bg-card);cursor:help}
+.nw-xrow{position:relative;height:13px;margin-top:9px}
+.nw-xl{position:absolute;top:0;font-family:var(--mono);font-size:9.5px;color:var(--text-3);white-space:nowrap}
+.nw-empty{padding:40px 12px;text-align:center;color:var(--text-3);font-size:13px;line-height:1.7}
+
+/* ── Form ── */
+/* Saving over a day that already holds a total is an edit, but it should
+   never be a silent one — the stored figure stays visible next to it. */
+.nw-clash{display:flex;flex-wrap:wrap;gap:4px;background:var(--blue-d);border:1px solid var(--sel-bd);
+  border-radius:var(--rs);padding:9px 12px;margin:-6px 0 16px;font-size:12px;line-height:1.5;color:var(--text-2)}
+.nw-clash b{font-family:var(--mono);color:var(--text);font-weight:700}
+
+/* ── History ── */
+.nw-hist{border-top:1px solid var(--border)}
+.nw-h-row{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.nw-h-row:last-child{border-bottom:none}
+.nw-h-row:hover{background:var(--bg-hover)}
+.nw-h-main{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px}
+.nw-h-l{min-width:0}
+.nw-h-date{font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap}
+.nw-h-rel{font-size:10.5px;color:var(--text-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nw-h-r{text-align:right}
+.nw-h-v{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.nw-h-d{font-family:var(--mono);font-size:11px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.nw-h-d.up{color:var(--green)}
+.nw-h-d.dn{color:var(--red)}
+.nw-h-d.flat{color:var(--text-3)}
+.nw-h-del{width:30px;height:30px;background:none;border:1px solid transparent;border-radius:var(--rs);
+  color:var(--text-3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;padding:0;flex-shrink:0}
+.nw-h-del svg{width:14px;height:14px}
+.nw-h-del:hover{color:var(--red);border-color:#ef444440;background:var(--red-d)}
+.nw-h-note{font-size:12px;color:var(--text-2);margin-top:7px;line-height:1.5;overflow-wrap:anywhere}
+/* The one thing neither dataset can say alone. Set apart so it reads as
+   an inference about the gap, not another figure you typed in. */
+.nw-h-flow{font-size:11px;line-height:1.5;color:var(--text-3);margin-top:7px;
+  padding-left:9px;border-left:2px solid var(--border-lt)}
+.nw-h-flow b{font-family:var(--mono);font-weight:700;color:var(--text-2)}
+.nw-h-foot{padding:12px 14px;border-top:1px solid var(--border);font-size:10.5px;line-height:1.6;color:var(--text-3)}
+
+/* Days already carrying a snapshot, marked in the date picker */
+.nw-cd{position:relative}
+.nw-cd.has::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--blue)}
+.nw-cd.sel::after{background:#04140a}
+.nw-cd:disabled{opacity:.22;cursor:default}
+.nw-cd:disabled:hover{background:none;color:var(--text-2)}
+
+@media(max-width:480px){
+  .nw-hero{padding:17px 15px}
+  .nw-hero-v{font-size:28px;letter-spacing:-1px}
+  .nw-stats{gap:6px}
+  .nw-stat-v{font-size:15px}
+  .nw-plot{padding-left:44px}
+  .nw-plot-in{height:165px}
+  .nw-yl{right:calc(100% + 6px);font-size:9px}
+  .nw-h-main{gap:9px}
+}

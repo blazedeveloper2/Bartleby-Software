@@ -1,14 +1,16 @@
 /* ═══════════════════════════════════════════════════════════
-   FINANCE APP — expense tracker
+   FINANCE APP — where the money goes, and how much of it is left.
    Add (amount · category · custom calendar · note), a filterable
-   History with tap-to-view details, and Insights (interactive
-   category donut + jump-to-any-month/year + 12-month trend).
+   History with tap-to-view details, Insights (interactive category
+   donut + jump-to-any-month/year + 12-month trend), and Net Worth
+   (see networth.js) — the total itself, logged over and over.
    Local-first; event-delegated; mount/unmount.
    ═══════════════════════════════════════════════════════════ */
 
 import { DEFAULT_CATS, PALETTE } from './data.js';
 import { load, save, todayStr } from '../../assets/js/storage.js';
 import { toast } from '../../assets/js/ui.js';
+import { renderNetWorth, nwClick, nwKeydown, nwReset } from './networth.js';
 
 /* ── storage ── */
 const txAll    = () => load('fin_tx', []);
@@ -749,7 +751,7 @@ function switchTab(tab) {
   root.querySelectorAll('.fin .panel').forEach(p => p.classList.remove('active'));
   q('#fp-' + tab).classList.add('active');
 }
-function renderAll() { renderAdd(); renderHistory(); renderInsights(); }
+function renderAll() { renderAdd(); renderHistory(); renderInsights(); renderNetWorth(root); }
 
 function onClick(e) {
   if (e.target.id === 'fx-modal') { closeModal(); return; }
@@ -757,6 +759,7 @@ function onClick(e) {
   const el = e.target.closest('[data-act]');
   if (!el || !root.contains(el)) return;
   const a = el.dataset;
+  if (a.act.startsWith('nw-')) { nwClick(a, root); return; }   // Net Worth owns its own actions
   switch (a.act) {
     case 'tab':           switchTab(a.tab); break;
     case 'hist-day-pick': histPickDay(a.d); break;
@@ -834,6 +837,7 @@ function histCalShift(delta) {
 }
 function onKeydown(e) {
   if (e.key !== 'Enter') return;
+  if (nwKeydown(e, root)) return;
   if (e.target.id === 'fx-amount') { e.preventDefault(); saveTx(); }
   else if (e.target.id === 'fx-newcat-in') { e.preventDefault(); saveNewCat(); }
   else if (e.target.id === 'fx-editcat-in') { e.preventDefault(); saveEditCat(); }
@@ -846,19 +850,25 @@ function onInput(e) {
 function onOver(e) { const arc = e.target.closest?.('.fx-arc'); if (arc && root.contains(arc)) donutHover(arc.dataset.name); }
 function onOut(e) { const arc = e.target.closest?.('.fx-arc'); if (!arc) return; const to = e.relatedTarget; if (to && to.closest?.('.fx-arc')) return; donutReset(); }
 
+/* The trend chart and the net worth line bake the palette into their SVG,
+   so a theme change has to repaint them — CSS alone can't reach inside. */
+function onDataChange() { if (root) renderAll(); }
+
 /* ═══════════════════ TEMPLATE + LIFECYCLE ═══════════════════ */
 function template() {
   return `<div class="fin">
-    <div class="app-head"><h1>Expenses</h1><p>Spending Tracker</p></div>
+    <div class="app-head"><h1>Finance</h1><p>Money Tracker</p></div>
     <nav class="nav"><div class="nav-inner">
       <button class="tab active" data-act="tab" data-tab="add">Add</button>
       <button class="tab" data-act="tab" data-tab="history">History</button>
       <button class="tab" data-act="tab" data-tab="insights">Insights</button>
+      <button class="tab" data-act="tab" data-tab="networth">Net Worth</button>
     </div></nav>
     <div class="app-wrap">
       <div class="panel active" id="fp-add"></div>
       <div class="panel" id="fp-history"></div>
       <div class="panel" id="fp-insights"></div>
+      <div class="panel" id="fp-networth"></div>
     </div>
     <div class="fx-ov" id="fx-modal"><div class="fx-ov-card" id="fx-modal-body"></div></div>
   </div>`;
@@ -866,7 +876,7 @@ function template() {
 
 export default {
   id: 'finance',
-  name: 'Expenses',
+  name: 'Finance',
   storagePrefix: 'fin_',
   styles: 'apps/finance/finance.css',
   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
@@ -881,6 +891,7 @@ export default {
     histMonth = 'all'; histCat = 'all'; histDay = ''; histCalOpen = false; histCalView = '';
     insMode = 'month'; insMonth = curMonth(); insYear = curYear(); insPickOpen = false;
     insNote = ''; insNoteAll = false;
+    nwReset();
 
     root.innerHTML = template();
     root.addEventListener('click', onClick);
@@ -889,6 +900,7 @@ export default {
     root.addEventListener('input', onInput);
     root.addEventListener('mouseover', onOver);
     root.addEventListener('mouseout', onOut);
+    window.addEventListener('bs:datachange', onDataChange);
     renderAll();
     switchTab(activeTab);
   },
@@ -901,6 +913,7 @@ export default {
       root.removeEventListener('mouseover', onOver);
       root.removeEventListener('mouseout', onOut);
     }
+    window.removeEventListener('bs:datachange', onDataChange);
     root = null;
   },
 };

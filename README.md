@@ -13,10 +13,19 @@ Live apps:
   Every weighted lift in the program is scored; each one is tagged with how
   trustworthy its standard is (exact match / proxy movement / estimate).
   See `apps/workout/standards.js` for the data and its sources.
-- **Finance** — expense tracker: log spending by category (add/delete your own
-  categories) with a calendar date picker and notes, a filterable history with
-  per-day totals and a jump-to-any-day filter, and Insights (category donut +
-  jump-to-any month/year + 12-month trend).
+- **Finance** — where the money goes, and how much of it is left.
+  **Add / History / Insights** track spending: log by category (add/delete your
+  own categories) with a calendar date picker and notes, a filterable history
+  with per-day totals and a jump-to-any-day filter, and Insights (category donut
+  + jump-to-any month/year + 12-month trend + repeat-note grouping).
+  **Net Worth** tracks the total itself: add up everything you hold, subtract
+  what you owe, log the number, and repeat whenever you like. One snapshot per
+  day, plotted on a real time axis so an interval you took six months to cross
+  looks like six months. Negative totals are allowed — the chart draws the zero
+  line and colours the trend by direction. Because the expenses live in the same
+  app, each gap in the history can also say roughly what came in: the change in
+  your total plus what you logged as spent over the same stretch. That figure is
+  labelled as the inference it is.
 - **Scripture** — read the Bible with the Church Fathers. **Library** walks the
   canon book by book, or takes a reference in the jump box (`matthew 25`,
   `mt 25:31`, `1cor13`, `ps 23`). Tapping a verse opens it with every patristic
@@ -76,7 +85,7 @@ Bartleby Software/
 │       └── commentary/       # patristic commentary, one file per chapter (~100 MB)
 ├── apps/
 │   ├── workout/              # index.js + data.js + rank.js + standards.js + workout.css
-│   ├── finance/              # expense tracker
+│   ├── finance/              # index.js + networth.js + data.js + finance.css
 │   └── scripture/            # index.js + bible.js + scripture.css
 ├── manifest.json             # Add to Home Screen (standalone app window)
 ├── .github/workflows/deploy.yml   # auto-deploy to GitHub Pages on every push
