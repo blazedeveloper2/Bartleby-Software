@@ -32,6 +32,12 @@
    so it is nowhere near comparable. Rather than invent a number,
    these log their weight and read as unscored — which still gives the
    progressive-overload trail, which is the point of loading them.
+
+   Saturday's calisthenics work is absent for the same reason: Strength
+   Level scores push-ups, dips and bodyweight chin-ups in REPS, and the
+   holds (wall handstand, hollow, arch) in seconds, neither of which this
+   weight-based model can read. Chin-Ups are the one exception — like
+   Pull-Ups they take a belt, so once weight is added they score below.
    ═══════════════════════════════════════════════════════════ */
 
 export const LIFTS = {
@@ -55,6 +61,8 @@ export const LIFTS = {
         and its Beginner anchor is negative (assisted) ── */
   'Pull-Ups':                    { r:[-0.20,0.18,0.59,1.06,1.55], src:'exact', mode:'added', base:'Weighted pull-up',
                                    note:'Logged weight is read as weight ADDED on a belt. Beginner is negative because that tier is still using assistance.' },
+  'Chin-Ups':                    { r:[-0.20,0.18,0.59,1.06,1.55], src:'proxy', mode:'added', base:'Weighted pull-up',
+                                   note:'Logged weight is read as weight ADDED on a belt — bodyweight-only reps stay unscored. The supinated grip is modestly stronger than the pull-up this is scored against, so it reads a little generous.' },
 
   /* ── closest published movement ── */
   'Chest-Supported Rows':        { r:[0.20,0.35,0.55,0.75,1.00], src:'proxy', base:'Dumbbell row',

@@ -600,7 +600,9 @@ function recoveryHTML() {
   ${card('The Recovery Window', `
     <p>Training tilts the balance toward breakdown. Over the following <b>24 to 72 hours</b> the job
     is to tilt it back — which is why a muscle trained hard on Monday is generally ready again by
-    Thursday, and why the four-day split you're running has the spacing it does.</p>
+    Thursday, and why the split you're running has the spacing it does: Saturday's calisthenics day
+    is upper-body and core only because Friday's legs are still inside that window, while the push
+    muscles have had five days and the pull muscles two.</p>
     ${dl([
       ['Protein', 'Spread across the day, roughly 0.4 g/kg per meal. Total matters more than timing.'],
       ['Calories', 'A deficit slows recovery. It is entirely possible to under-recover by under-eating alone.'],

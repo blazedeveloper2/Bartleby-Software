@@ -104,7 +104,7 @@ function dayTally(di, ch) {
 }
 
 /* Patch the row and its day header in place. A full renderProg() here
-   would rebuild all four cards, which reads as a page-wide flicker and
+   would rebuild all five cards, which reads as a page-wide flicker and
    restarts every card's entrance animation. */
 function toggleChk(k) {
   const c = chks(); c[k] = !c[k]; sChk(c);
@@ -606,7 +606,7 @@ function onKeydown(e) {
 
 function template() {
   return `<div class="wk">
-    <div class="app-head"><h1>Build Program</h1><p>Dumbbells + Bench · 4 Day Upper/Lower · Rank Up</p></div>
+    <div class="app-head"><h1>Build Program</h1><p>Dumbbells + Bench · 4 Day Upper/Lower + Calisthenics · Rank Up</p></div>
     <nav class="nav"><div class="nav-inner">
       <button class="tab active" data-act="tab" data-tab="program">Program</button>
       <button class="tab" data-act="tab" data-tab="bw">Weight</button>

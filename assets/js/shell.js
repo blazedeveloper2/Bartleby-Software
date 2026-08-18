@@ -227,7 +227,7 @@ function syncSettings() {
 
   const bar = barOn();
   el.querySelector('#sx-eq-sub').textContent = bar
-    ? 'Pull-Ups & Hanging Knee Raises need one.'
+    ? 'Pull-Ups, Chin-Ups, Scap Pulls & Leg Raises need one.'
     : 'Swapped to dumbbell & bench alternatives.';
   el.querySelectorAll('#sx-eq .sx-seg-btn').forEach(b =>
     b.classList.toggle('sel', (b.dataset.v === '1') === bar));

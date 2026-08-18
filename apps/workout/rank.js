@@ -62,10 +62,28 @@ const sReps = r => save('bp_reps', r);
 
 /* ── schedule ── */
 const DOW = { sun:0, mon:1, tue:2, wed:3, thu:4, fri:5, sat:6 };
-const SCHED = PROGRAM.map(d => DOW[d.day]);
 const DI_OF_DOW = {};
 PROGRAM.forEach((d, i) => { DI_OF_DOW[DOW[d.day]] = i; });
 const WEEK_TARGET = PROGRAM.length;
+
+/* Whether a program day existed on a given date. A day added mid-history
+   (its `since` in data.js) only exists from that date on — before it, the
+   weekday was genuinely a rest day, and streaks, the heatmap and perfect
+   weeks must all read it that way rather than rewriting the past. */
+function schedOn(ds, dow) {
+  const di = DI_OF_DOW[dow];
+  if (di === undefined) return false;
+  const s = PROGRAM[di].since;
+  return !s || ds >= s;
+}
+
+/* How many days the program asked of the week starting `wkStart` (Monday).
+   A day with a `since` counts only in weeks whose occurrence of that
+   weekday falls on or after it. */
+function weekTargetFor(wkStart) {
+  return PROGRAM.filter(day => !day.since ||
+    dateStr(addDays(dOf(wkStart), (DOW[day.day] + 6) % 7)) >= day.since).length;
+}
 
 const ICO = {
   bolt:   '<polygon points="13 2 4 14 11 14 10 22 20 10 13 10 13 2"/>',
@@ -422,7 +440,7 @@ function streaksFrom(hits, firstDate) {
   if (!firstDate) return { streak:0, best:0 };
   let cur = 0, best = 0;
   eachDate(firstDate, today, (ds, d) => {
-    if (!SCHED.includes(d.getDay())) return;
+    if (!schedOn(ds, d.getDay())) return;
     if (hits.has(ds)) { cur++; best = Math.max(best, cur); }
     else if (ds !== today) cur = 0;
   });
@@ -442,7 +460,7 @@ export function stats() {
     weeks.get(k).add(e.di);
   });
   let perfectWeeks = 0;
-  weeks.forEach(set => { if (set.size >= WEEK_TARGET) perfectWeeks++; });
+  weeks.forEach((set, k) => { if (set.size >= weekTargetFor(k)) perfectWeeks++; });
 
   /* longest layoff between two logged sessions */
   const days = [...new Set(log.map(e => e.d))].sort();
@@ -470,7 +488,7 @@ export function stats() {
     voids: h.voids,
     streak, best,
     weekDone: weeks.get(dateStr(weekStart(new Date())))?.size || 0,
-    weekTarget: WEEK_TARGET,
+    weekTarget: weekTargetFor(dateStr(weekStart(new Date()))),
     perfectWeeks, maxGap,
     bwCount: bwLog.length,
     bwDelta: bwLog.length >= 2 ? bwLog[bwLog.length - 1].w - bwLog[0].w : 0,
@@ -874,7 +892,7 @@ function heatmapHTML(s) {
   for (let r = 0; r < 7; r++) {
     for (let c = 0; c < HM_WEEKS; c++) {
       const d = addDays(start, c * 7 + r), ds = dateStr(d);
-      const sched = SCHED.includes(d.getDay());
+      const sched = schedOn(ds, d.getDay());
       const label = PROGRAM[DI_OF_DOW[d.getDay()]]?.label || 'scheduled';
       let cls, tip;
       if (ds > today)                            cls = 'future', tip = fmtD(ds);
@@ -917,7 +935,7 @@ function nextUpHTML(s) {
   const now = new Date();
   for (let i = 0; i < 8; i++) {
     const d = addDays(now, i), ds = dateStr(d);
-    if (!SCHED.includes(d.getDay())) continue;
+    if (!schedOn(ds, d.getDay())) continue;
     if (i === 0 && s.hits.has(ds)) continue;
     const when = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dOf(ds).toLocaleDateString('en-US', { weekday:'long' });
     return `<span class="pg-next-w">${when}</span> · ${PROGRAM[DI_OF_DOW[d.getDay()]].label}`;

@@ -3,7 +3,12 @@
    ═══════════════════════════════════════════════════════════ */
 
 /* Exercises with an `alt` swap to that version when "No Bar" mode is on
-   (for anyone using the program without a pull-up bar). */
+   (for anyone using the program without a pull-up bar).
+
+   A day carrying a `since` date was added to the program on that date.
+   Streaks, the heatmap and perfect weeks in rank.js honour it, so the
+   weekday reads as what it actually was before then — a rest day — instead
+   of a wall of retroactive misses. */
 export const PROGRAM = [
   {day:'mon',label:'Upper · Push Focus',sections:[
     {tag:null,ex:[
@@ -65,6 +70,32 @@ export const PROGRAM = [
       {n:'Weighted Hanging Leg Raises',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
        alt:{n:'Weighted Reverse Crunches',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
       {n:'Weighted Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side',b:'DB On Top Hip',bc:'grip'},
+    ]},
+  ]},
+  /* Upper-body + core only, on purpose: Friday's RDLs and thrusts are ~24h
+     old on Saturday morning, while the push muscles have had five days and
+     the pull muscles two. Structure follows the r/bodyweightfitness
+     Recommended Routine — skill work fresh at the front, strength work at
+     3×5-8 (progress to a harder variation at the top of the range), body-line
+     holds at the end. The skill block is what eventually becomes a
+     freestanding handstand; keep the holds honest rather than long. */
+  {day:'sat',since:'2026-08-18',label:'Upper · Calisthenics',sections:[
+    {tag:'Skill',ex:[
+      {n:'Wrist Prep Rocks',m:'Forearms',s:'2× easy'},
+      {n:'Wall Handstand Hold',m:'Front Delts, Side Delts, Traps, Triceps, Core',s:'3×15-30s',b:'Chest To Wall'},
+      {n:'Scapular Pulls',m:'Lats, Mid Traps, Rhomboids, Forearms',s:'3×5-8',b:'Dead Hang',bc:'grip',
+       alt:{n:'Scapular Rows',m:'Rhomboids, Mid Traps, Lats',s:'3×8-10',b:'30-45°',bc:'bench-30'}},
+    ]},
+    {tag:null,ex:[
+      {n:'Chin-Ups',m:'Lats, Biceps, Rhomboids, Forearms',s:'3×5-8',b:'Supinated Grip',bc:'grip',
+       alt:{n:'Single-Arm Rows',m:'Lats, Rhomboids, Rear Delts, Biceps',s:'3×5-8 /arm',b:'Flat 0°',bc:'bench-flat'}},
+      {n:'Push-Ups',m:'Chest, Triceps, Front Delts, Serratus Anterior, Core',s:'3×5-8'},
+      {n:'Pike Push-Ups',m:'Front Delts, Side Delts, Triceps, Upper Chest',s:'3×5-8'},
+      {n:'Bench Dips',m:'Triceps, Chest, Front Delts',s:'3×8-12',b:'Hands On Bench',bc:'bench-flat'},
+    ]},
+    {tag:'Core',ex:[
+      {n:'Hollow Body Hold',m:'Rectus Abdominis, TVA, Hip Flexors',s:'3×15-30s'},
+      {n:'Arch Hold',m:'Erectors, Glutes, Rear Delts, Traps',s:'3×15-30s'},
     ]},
   ]},
 ];
