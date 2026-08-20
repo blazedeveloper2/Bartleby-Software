@@ -2,8 +2,11 @@
    WORKOUT — program definition + muscle-map lookup table.
    ═══════════════════════════════════════════════════════════ */
 
-/* Exercises with an `alt` swap to that version when "No Bar" mode is on
-   (for anyone using the program without a pull-up bar).
+/* An exercise with an `alt` names the kit it needs in `req` ('bar', 'wheel').
+   Turn that piece of equipment off in Settings and the whole app — rendering,
+   scoring, badge counts, the Study tab — reads the `alt` version instead, so
+   the program still works for anyone without a pull-up bar or an ab wheel.
+   An `alt` with no `req` never swaps; name the equipment.
 
    A day carrying a `since` date was added to the program on that date.
    Streaks, the heatmap and perfect weeks in rank.js honour it, so the
@@ -36,14 +39,14 @@ export const PROGRAM = [
     {tag:'Core',ex:[
       {n:'Dumbbell Crunch',m:'Upper Abs, Rectus Abdominis, Obliques',s:'2×8-15',b:'Hips On Bench',bc:'bench-flat'},
       {n:'Weighted Hanging Leg Raises',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
-       alt:{n:'Weighted Reverse Crunches',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
+       req:'bar', alt:{n:'Weighted Reverse Crunches',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
       {n:'Weighted Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side',b:'DB On Top Hip',bc:'grip'},
     ]},
   ]},
   {day:'thu',label:'Upper · Pull Focus',sections:[
     {tag:null,ex:[
       {n:'Pull-Ups',m:'Lats, Biceps, Rhomboids, Forearms',s:'2×F',b:'Pronated Grip',bc:'grip',
-       alt:{n:'Single-Arm Rows',m:'Lats, Rhomboids, Rear Delts, Biceps',s:'2×F /arm',b:'Flat 0°',bc:'bench-flat'}},
+       req:'bar', alt:{n:'Single-Arm Rows',m:'Lats, Rhomboids, Rear Delts, Biceps',s:'2×F /arm',b:'Flat 0°',bc:'bench-flat'}},
       {n:'Chest-Supported Rows',m:'Lats, Rhomboids, Traps, Rear Delts, Biceps',s:'2×F',b:'30-45°',bc:'bench-30'},
       {n:'Dumbbell Pullovers',m:'Lats, Chest, Serratus Anterior',s:'2×F',b:'Flat 0°',bc:'bench-flat'},
     ]},
@@ -68,7 +71,7 @@ export const PROGRAM = [
     {tag:'Core',ex:[
       {n:'Dumbbell Crunch',m:'Upper Abs, Rectus Abdominis, Obliques',s:'2×8-15',b:'Hips On Bench',bc:'bench-flat'},
       {n:'Weighted Hanging Leg Raises',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'DB Between Feet',bc:'grip',
-       alt:{n:'Weighted Reverse Crunches',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
+       req:'bar', alt:{n:'Weighted Reverse Crunches',m:'Lower Abs, Rectus Abdominis, Hip Flexors, Obliques',s:'2×10-20',b:'Flat 0°',bc:'bench-flat'}},
       {n:'Weighted Side Plank w/ Reach-Through',m:'Obliques, TVA, Core',s:'2×F /side',b:'DB On Top Hip',bc:'grip'},
     ]},
   ]},
@@ -84,17 +87,28 @@ export const PROGRAM = [
       {n:'Wrist Prep Rocks',m:'Forearms',s:'2× easy'},
       {n:'Wall Handstand Hold',m:'Front Delts, Side Delts, Traps, Triceps, Core',s:'3×15-30s',b:'Chest To Wall'},
       {n:'Scapular Pulls',m:'Lats, Mid Traps, Rhomboids, Forearms',s:'3×5-8',b:'Dead Hang',bc:'grip',
-       alt:{n:'Scapular Rows',m:'Rhomboids, Mid Traps, Lats',s:'3×8-10',b:'30-45°',bc:'bench-30'}},
+       req:'bar', alt:{n:'Scapular Rows',m:'Rhomboids, Mid Traps, Lats',s:'3×8-10',b:'30-45°',bc:'bench-30'}},
     ]},
     {tag:null,ex:[
       {n:'Chin-Ups',m:'Lats, Biceps, Rhomboids, Forearms',s:'3×5-8',b:'Supinated Grip',bc:'grip',
-       alt:{n:'Single-Arm Rows',m:'Lats, Rhomboids, Rear Delts, Biceps',s:'3×5-8 /arm',b:'Flat 0°',bc:'bench-flat'}},
+       req:'bar', alt:{n:'Single-Arm Rows',m:'Lats, Rhomboids, Rear Delts, Biceps',s:'3×5-8 /arm',b:'Flat 0°',bc:'bench-flat'}},
       {n:'Push-Ups',m:'Chest, Triceps, Front Delts, Serratus Anterior, Core',s:'3×5-8'},
       {n:'Pike Push-Ups',m:'Front Delts, Side Delts, Triceps, Upper Chest',s:'3×5-8'},
       {n:'Bench Dips',m:'Triceps, Chest, Front Delts',s:'3×8-12',b:'Hands On Bench',bc:'bench-flat'},
     ]},
+    /* The rollout takes the hollow hold's slot rather than adding to it —
+       Tuesday and Friday already carry six loaded core sets each, and a
+       fourth core day is past the point of useful. It is the same body line
+       the hold trains, but moving and loaded, with the arms overhead: that
+       shoulder position is what a handstand asks for, which is why this sits
+       on the day that builds toward one. Progress by rolling further out,
+       not by adding reps, and keep the pelvis tucked the whole way — a
+       rollout that turns into lumbar extension is a low-back exercise, and
+       Friday's RDLs left the erectors ~24h old. No wheel swaps it straight
+       back to the hollow hold. */
     {tag:'Core',ex:[
-      {n:'Hollow Body Hold',m:'Rectus Abdominis, TVA, Hip Flexors',s:'3×15-30s'},
+      {n:'Ab Wheel Rollouts',m:'Rectus Abdominis, Obliques, TVA, Lats, Serratus Anterior',s:'3×5-8',b:'From Knees',
+       req:'wheel', alt:{n:'Hollow Body Hold',m:'Rectus Abdominis, TVA, Hip Flexors',s:'3×15-30s'}},
       {n:'Arch Hold',m:'Erectors, Glutes, Rear Delts, Traps',s:'3×15-30s'},
     ]},
   ]},

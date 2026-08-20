@@ -48,12 +48,20 @@ const achSv  = a => save('bp_ach', a);
 const wts    = () => load('bp_wt', {});
 const sortByDate = l => [...l].sort((a, b) => a.d.localeCompare(b.d));
 
-/* Pull-up-bar equipment flag, owned by Settings. When it is off, exercises
-   with an `alt` resolve to their no-bar version. Shared with the Program tab
-   so rendering, scoring and the badge counts all agree on which exercises
-   are actually in play. */
-export const barOn = () => load('bp_bar', true);
-export const resEx = ex => (!barOn() && ex.alt) ? ex.alt : ex;
+/* Equipment flags, owned by Settings. An exercise names the kit it needs in
+   `req` (see data.js); when that kit is off, it resolves to its `alt`. Every
+   consumer goes through resEx(), so rendering, scoring and the badge counts
+   all agree on which exercises are actually in play.
+
+   An unknown or absent `req` resolves as owned — a new `alt` added without
+   naming its equipment shows the main movement rather than silently hiding
+   it behind a flag nothing can turn on. */
+const OWNED = {
+  bar:   () => load('bp_bar', true),
+  wheel: () => load('bp_wheel', true),
+};
+export const owns = k => (OWNED[k] || (() => true))();
+export const resEx = ex => (ex.alt && !owns(ex.req)) ? ex.alt : ex;
 
 /* Reps-to-failure assumption behind the 1RM estimate. */
 export const REP_OPTS = [5, 8, 10, 12, 15];

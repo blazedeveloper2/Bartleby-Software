@@ -151,16 +151,7 @@ function buildSettings() {
         <div class="sx-themes" id="sx-themes"></div>
 
         <div class="sx-sec-lbl mt">Equipment</div>
-        <div class="sx-row">
-          <div class="sx-row-l">
-            <div class="sx-row-t">Pull-Up Bar</div>
-            <div class="sx-row-s" id="sx-eq-sub"></div>
-          </div>
-          <div class="sx-seg" id="sx-eq">
-            <button class="sx-seg-btn" data-sx="bar" data-v="1">Have One</button>
-            <button class="sx-seg-btn" data-sx="bar" data-v="0">No Bar</button>
-          </div>
-        </div>
+        <div class="sx-eq" id="sx-eq"></div>
 
         <div class="sx-sec-lbl mt">Data &amp; Backup</div>
         <div class="sx-usage">
@@ -186,7 +177,7 @@ function buildSettings() {
     else if (act === 'export') exportBackup();
     else if (act === 'import') el.querySelector('#sx-file').click();
     else if (act === 'theme') pickTheme(btn.dataset.t);
-    else if (act === 'bar') pickBar(btn.dataset.v === '1');
+    else if (act === 'eq') pickEquip(btn.dataset.id, btn.dataset.v === '1');
   });
   el.querySelector('#sx-file').addEventListener('change', importBackup);
   return el;
@@ -201,13 +192,34 @@ function pickTheme(id) {
   toast(`${THEMES.find(t => t.id === id)?.name || id} theme`);
 }
 
-const barOn = () => { try { return JSON.parse(localStorage.getItem('bp_bar')) ?? true; } catch { return true; } };
-function pickBar(v) {
-  if (v === barOn()) return;
-  localStorage.setItem('bp_bar', JSON.stringify(v));
+/* One entry per piece of optional kit the workout program can do without.
+   The keys pair with `req` in apps/workout/data.js — an exercise naming a
+   `req` that is off resolves to its `alt`. Read straight out of storage
+   rather than imported from the app: the shell owns the setting, and it
+   must not pull an app module in just to paint a toggle. Adding kit here
+   plus a `req` there is the whole job.
+
+   Both default ON, so the program reads as written for a first-time visitor
+   and turning a toggle off is what changes it — not the other way round. */
+const EQUIP = [
+  { id:'bar', key:'bp_bar', name:'Pull-Up Bar', on:'Have One', off:'No Bar',
+    subOn:'Pull-Ups, Chin-Ups, Scap Pulls & Leg Raises need one.',
+    subOff:'Swapped to dumbbell & bench alternatives.',
+    toastOn:'Pull-up bar exercises on', toastOff:'Swapped to no-bar alternatives' },
+  { id:'wheel', key:'bp_wheel', name:'Ab Wheel', on:'Have One', off:'No Wheel',
+    subOn:"Saturday's rollouts need one.",
+    subOff:'Swapped back to the hollow body hold.',
+    toastOn:'Ab wheel rollouts on', toastOff:'Swapped to the hollow body hold' },
+];
+const eqOn = k => { try { return JSON.parse(localStorage.getItem(k)) ?? true; } catch { return true; } };
+
+function pickEquip(id, v) {
+  const eq = EQUIP.find(e => e.id === id);
+  if (!eq || v === eqOn(eq.key)) return;
+  localStorage.setItem(eq.key, JSON.stringify(v));
   syncSettings();
   broadcast();
-  toast(v ? 'Pull-up bar exercises on' : 'Swapped to no-bar alternatives');
+  toast(v ? eq.toastOn : eq.toastOff);
 }
 
 /* Tell the mounted app that shared state changed. */
@@ -225,12 +237,20 @@ function syncSettings() {
       <span class="sx-tick"></span>
     </button>`).join('');
 
-  const bar = barOn();
-  el.querySelector('#sx-eq-sub').textContent = bar
-    ? 'Pull-Ups, Chin-Ups, Scap Pulls & Leg Raises need one.'
-    : 'Swapped to dumbbell & bench alternatives.';
-  el.querySelectorAll('#sx-eq .sx-seg-btn').forEach(b =>
-    b.classList.toggle('sel', (b.dataset.v === '1') === bar));
+  el.querySelector('#sx-eq').innerHTML = EQUIP.map(eq => {
+    const on = eqOn(eq.key);
+    return `
+    <div class="sx-row">
+      <div class="sx-row-l">
+        <div class="sx-row-t">${eq.name}</div>
+        <div class="sx-row-s">${on ? eq.subOn : eq.subOff}</div>
+      </div>
+      <div class="sx-seg">
+        <button class="sx-seg-btn ${on ? 'sel' : ''}" data-sx="eq" data-id="${eq.id}" data-v="1">${eq.on}</button>
+        <button class="sx-seg-btn ${on ? '' : 'sel'}" data-sx="eq" data-id="${eq.id}" data-v="0">${eq.off}</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function openSettings() {

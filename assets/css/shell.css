@@ -141,6 +141,7 @@
 .sx-theme.sel .sx-tick::after{content:'';position:absolute;left:5px;top:3px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
 
 /* ── labelled setting row + segmented control ── */
+.sx-eq{display:flex;flex-direction:column;gap:9px}
 .sx-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
   background:var(--bg);border:none;border-radius:0;--n:8px;box-shadow:inset 0 0 0 1px var(--border);
   clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
