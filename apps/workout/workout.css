@@ -284,6 +284,7 @@
 .rk-next{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--text-2)}
 .rk-next .pg-kicker{flex-shrink:0}
 .pg-next-w{color:var(--text);font-weight:600}
+.pg-next-owe{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--amber);letter-spacing:.3px}
 
 /* ── per-lift breakdown ── */
 .rk-reps{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
@@ -330,6 +331,7 @@
 .pg-hm-c.open{background:var(--bg);border-color:var(--border-lt)}
 .pg-hm-c.miss{background:var(--red-d);border-color:var(--red-d)}
 .pg-hm-c.hit{background:var(--green);border-color:var(--green)}
+.pg-hm-c.make{background:var(--green-d);border-color:var(--green)}
 .pg-hm-c.today{box-shadow:0 0 0 1.5px var(--blue)}
 .pg-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:10px;color:var(--text-3);font-weight:500}
 .pg-legend span{display:flex;align-items:center;gap:5px}

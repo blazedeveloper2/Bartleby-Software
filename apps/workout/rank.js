@@ -443,14 +443,48 @@ export function standingOf(name) {
 }
 
 /* ═══════════════════ CONSISTENCY STATS ═══════════════════ */
-function streaksFrom(hits, firstDate) {
+
+/* Where each scheduled day's work actually landed.
+
+   Miss Monday, tick Monday's card and Tuesday's card on Tuesday, and the
+   work was moved, not skipped — so Monday stops reading as a miss. The
+   window is the Monday-start week, the same unit perfect weeks already
+   use: this week's Monday can still be made up on Sunday, and a Monday
+   from three weeks ago cannot be made up at all.
+
+   Returns 'done' when the day's own card was finished on the day itself,
+   otherwise the date its work landed on, otherwise null. */
+function coverage(log) {
+  const byWeek = new Map();
+  log.forEach(e => {
+    const k = dateStr(weekStart(dOf(e.d)));
+    if (!byWeek.has(k)) byWeek.set(k, new Map());
+    const m = byWeek.get(k);
+    m.set(e.di, [...(m.get(e.di) || []), e.d]);
+  });
+  return (ds, dow) => {
+    const di = DI_OF_DOW[dow];
+    if (di === undefined) return null;
+    const on = byWeek.get(dateStr(weekStart(dOf(ds))))?.get(di);
+    if (!on) return null;
+    return on.includes(ds) ? 'done' : [...on].sort()[0];
+  };
+}
+
+/* A made-up day keeps the run alive without adding to it. The streak counts
+   days you trained, and handing five days to one Sunday because five cards
+   got ticked that afternoon is exactly the kind of number this file refuses
+   to print — so a makeup bridges the gap and does nothing else. Miss Monday,
+   double up Tuesday, and the streak reads 4 → 5, not 4 → 6 and not 0 → 1. */
+function streaksFrom(hits, firstDate, cover) {
   const today = todayStr();
   if (!firstDate) return { streak:0, best:0 };
   let cur = 0, best = 0;
   eachDate(firstDate, today, (ds, d) => {
     if (!schedOn(ds, d.getDay())) return;
-    if (hits.has(ds)) { cur++; best = Math.max(best, cur); }
-    else if (ds !== today) cur = 0;
+    if (hits.has(ds)) { cur++; best = Math.max(best, cur); return; }
+    if (cover(ds, d.getDay())) return;        // made up later the same week
+    if (ds !== today) cur = 0;
   });
   return { streak: cur, best };
 }
@@ -459,7 +493,8 @@ export function stats() {
   const log = logAll(), h = weightHistory();
   const hits = new Set(log.map(e => e.d));
   const firstDate = log.length ? log[0].d : null;
-  const { streak, best } = streaksFrom(hits, firstDate);
+  const cover = coverage(log);
+  const { streak, best } = streaksFrom(hits, firstDate, cover);
 
   const weeks = new Map();
   log.forEach(e => {
@@ -480,7 +515,7 @@ export function stats() {
   const bwLog = load('bp_bw', []);
 
   const s = {
-    log, prList: h.entries, hits, firstDate,
+    log, prList: h.entries, hits, firstDate, cover,
     sessions: log.length,
     sets: log.reduce((a, e) => a + (e.sets || 0), 0),
     /* Records, not edits: an increase counts once it clears that lift's
@@ -902,6 +937,10 @@ function heatmapHTML(s) {
       const d = addDays(start, c * 7 + r), ds = dateStr(d);
       const sched = schedOn(ds, d.getDay());
       const label = PROGRAM[DI_OF_DOW[d.getDay()]]?.label || 'scheduled';
+      /* 'done' never reaches the makeup branch — it implies a session that
+         date, which is caught above. What is left over is work that moved. */
+      const cov = sched ? s.cover(ds, d.getDay()) : null;
+      const made = cov && cov !== 'done' ? cov : null;
       let cls, tip;
       if (ds > today)                            cls = 'future', tip = fmtD(ds);
       else if (s.hits.has(ds)) {
@@ -909,6 +948,7 @@ function heatmapHTML(s) {
         tip = `${fmtD(ds)} · ${s.log.filter(e => e.d === ds).map(e => PROGRAM[e.di]?.label).join(', ') || 'session'}`;
       }
       else if (!sched)                           cls = 'rest',   tip = `${fmtD(ds)} · rest day`;
+      else if (made)                             cls = 'make',   tip = `${fmtD(ds)} · ${label} · made up ${fmtD(made)}`;
       else if (ds === today)                     cls = 'open',   tip = `Today · ${label}`;
       else if (s.firstDate && ds >= s.firstDate) cls = 'miss',   tip = `${fmtD(ds)} · missed`;
       else                                       cls = 'pre',    tip = fmtD(ds);
@@ -924,6 +964,7 @@ function heatmapHTML(s) {
     </div>
     <div class="pg-legend">
       <span><i class="pg-hm-c hit"></i>Trained</span>
+      <span><i class="pg-hm-c make"></i>Made up</span>
       <span><i class="pg-hm-c miss"></i>Missed</span>
       <span><i class="pg-hm-c rest"></i>Rest day</span>
     </div>
@@ -939,16 +980,33 @@ function tile(label, value, unit, sub, cnt) {
   </div>`;
 }
 
+/* Days this week whose weekday has passed with their own card still
+   unfinished. They can be made up until Sunday, so the card says how many
+   are still on the table instead of letting them rot into misses quietly.
+   A day you trained on but trained something else is owed like any other —
+   its work has not happened yet. */
+function owedThisWeek(s) {
+  const today = todayStr(), out = [];
+  eachDate(dateStr(weekStart(new Date())), today, (ds, d) => {
+    if (ds >= today || !schedOn(ds, d.getDay()) || s.cover(ds, d.getDay())) return;
+    out.push(PROGRAM[DI_OF_DOW[d.getDay()]].label);
+  });
+  return out;
+}
+
 function nextUpHTML(s) {
   const now = new Date();
+  const owed = owedThisWeek(s);
+  const tail = owed.length
+    ? ` <span class="pg-next-owe" title="${owed.join(', ')}">+${owed.length} to make up</span>` : '';
   for (let i = 0; i < 8; i++) {
     const d = addDays(now, i), ds = dateStr(d);
     if (!schedOn(ds, d.getDay())) continue;
     if (i === 0 && s.hits.has(ds)) continue;
     const when = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dOf(ds).toLocaleDateString('en-US', { weekday:'long' });
-    return `<span class="pg-next-w">${when}</span> · ${PROGRAM[DI_OF_DOW[d.getDay()]].label}`;
+    return `<span class="pg-next-w">${when}</span> · ${PROGRAM[DI_OF_DOW[d.getDay()]].label}${tail}`;
   }
-  return 'Rest up.';
+  return `Rest up.${tail}`;
 }
 
 /* One row of the change feed. Three shapes, because three different things
