@@ -18,17 +18,29 @@
      base  which published movement the numbers came from
 
    Source: https://strengthlevel.com/strength-standards (per-lift
-   pages, lb, male, "Bodyweight Ratio" table). Retrieved Jul 2026
-   from datasets of ~0.2–5M logged lifts per exercise.
+   pages, lb, male, "Bodyweight Ratio" table). Retrieved Jul 2026,
+   re-verified against the live pages Aug 2026 — every ratio-table
+   entry matched, and Pull-Ups, Chin-Ups, Chest-Supported Rows and
+   Farmer's Carries were corrected to the published data (see each
+   entry). Datasets run from ~18k lifts (farmers walk) to ~5M per
+   exercise.
+
+   Known approximation, carried on purpose: the site's headline
+   ratios track its ~140–160 lb table rows, and its full tables
+   scale sub-linearly with bodyweight — so one flat ratio reads a
+   little strict for heavier lifters and a little soft for lighter
+   ones. The two entries with no published ratio table (Pull-Ups,
+   Chin-Ups) are anchored on the same 140–160 lb band so the whole
+   file errs in one consistent direction.
 
    Core work never appears here, for two different reasons. Dead bugs
    take no load at all, so there is nothing to score. The weighted core
    movements — dumbbell crunch, weighted reverse crunch / hanging leg
    raise, weighted side plank — do take load, but no usable standard
    exists for them: Strength Level scores crunches and leg raises in
-   REPS at bodyweight, not in weight, and its one weighted-flexion
-   entry (standing cable crunch, ~0.99× bodyweight at Intermediate)
-   loads through a rope overhead rather than a dumbbell at the chest,
+   REPS at bodyweight, not in weight, and its weighted-flexion
+   entries (cable crunches, ~0.75× bodyweight at Intermediate)
+   load through a rope overhead rather than a dumbbell at the chest,
    so it is nowhere near comparable. Rather than invent a number,
    these log their weight and read as unscored — which still gives the
    progressive-overload trail, which is the point of loading them.
@@ -53,32 +65,36 @@ export const LIFTS = {
   'Incline Curls':               { r:[0.10,0.15,0.25,0.35,0.45], src:'exact', base:'Incline dumbbell curl' },
   'Dumbbell Pullovers':          { r:[0.15,0.30,0.45,0.65,0.85], src:'exact', base:'Dumbbell pullover' },
   'Single-Arm Rows':             { r:[0.20,0.35,0.55,0.75,1.00], src:'exact', base:'Dumbbell row' },
+  'Chest-Supported Rows':        { r:[0.15,0.30,0.45,0.70,0.95], src:'exact', base:'Chest-supported dumbbell row' },
   'Romanian Deadlifts':          { r:[0.20,0.35,0.55,0.80,1.05], src:'exact', base:'Dumbbell Romanian deadlift' },
   'Bulgarian Split Squats':      { r:[0.15,0.25,0.40,0.60,0.85], src:'exact', base:'Dumbbell Bulgarian split squat' },
   'Standing Calf Raises':        { r:[0.10,0.25,0.45,0.75,1.10], src:'exact', base:'Dumbbell calf raise' },
 
-  /* ── weighted pull-up: the standard is ADDED weight ÷ bodyweight,
-        and its Beginner anchor is negative (assisted) ── */
-  'Pull-Ups':                    { r:[-0.20,0.18,0.59,1.06,1.55], src:'exact', mode:'added', base:'Weighted pull-up',
+  /* ── weighted pull-up / chin-up: the standard is ADDED weight ÷
+        bodyweight, and the Beginner anchors are negative (assisted).
+        Neither page publishes a ratio table, so these are read off
+        the 140–160 lb rows of each page's 1RM added-weight table.
+        Chin standards sit slightly above pull standards because
+        people chin a little more than they pull — each grip now
+        scores against its own data. ── */
+  'Pull-Ups':                    { r:[-0.04,0.18,0.44,0.72,1.02], src:'exact', mode:'added', base:'Pull-up, 1RM added weight',
                                    note:'Logged weight is read as weight ADDED on a belt. Beginner is negative because that tier is still using assistance.' },
-  'Chin-Ups':                    { r:[-0.20,0.18,0.59,1.06,1.55], src:'proxy', mode:'added', base:'Weighted pull-up',
-                                   note:'Logged weight is read as weight ADDED on a belt — bodyweight-only reps stay unscored. The supinated grip is modestly stronger than the pull-up this is scored against, so it reads a little generous.' },
+  'Chin-Ups':                    { r:[-0.01,0.20,0.45,0.73,1.01], src:'exact', mode:'added', base:'Chin-up, 1RM added weight',
+                                   note:'Logged weight is read as weight ADDED on a belt — bodyweight-only reps stay unscored. Beginner is negative because that tier is still using assistance.' },
 
   /* ── closest published movement ── */
-  'Chest-Supported Rows':        { r:[0.20,0.35,0.55,0.75,1.00], src:'proxy', base:'Dumbbell row',
-                                   note:'Chest-supported is the stricter variation, so this reads a little harsh.' },
   'Heel-Elevated Goblet Squats': { r:[0.20,0.35,0.55,0.75,1.05], src:'proxy', base:'Goblet squat',
                                    note:'Heel elevation makes the movement slightly easier than the published version.' },
   'Preacher Curls':              { r:[0.10,0.15,0.25,0.35,0.45], src:'proxy', base:'Incline dumbbell curl',
-                                   note:'No dumbbell preacher-curl data exists. Incline curl is the closest published match — both are strict curls from a stretched position.' },
+                                   note:'No dumbbell preacher-curl data exists — the published preacher curl is the barbell version. Incline curl is the closest dumbbell match: both are strict, elbow-isolated curls, though the pad shortens the long head where the incline stretches it.' },
+  "Farmer's Carries":            { r:[0.10,0.25,0.45,0.70,1.05], src:'proxy', base:'Farmers walk, per hand, 20 m reference',
+                                   note:'Published carry standards are per hand against a 20 m reference carry (the site found 10–50 m all matched), from a far smaller dataset than the big lifts. Your carries run to failure rather than a fixed distance, so read this row loosely.' },
 
   /* ── no published dumbbell data; converted from a barbell lift ── */
   'B-Stance RDLs':               { r:[0.25,0.50,0.75,1.25,1.50], src:'est', mult:2, base:'Single-leg Romanian deadlift (barbell, total load)',
                                    note:'Your two dumbbells are summed and compared with the single-leg barbell standard. A B-stance rear foot takes some of the load, so this reads generous.' },
   'B-Stance Hip Thrusts':        { r:[0.25,0.63,0.88,1.38,1.88], src:'est', base:'Barbell hip thrust, halved for one-leg-dominant work',
                                    note:'Barbell hip-thrust standards (0.50/1.25/1.75/2.75/3.75× bodyweight) halved, since a B-stance thrust loads roughly one leg. A rough estimate, not published data.' },
-  "Farmer's Carries":            { r:[0.20,0.35,0.50,0.70,0.95], src:'est', base:'None published',
-                                   note:'No strength standard exists for loaded carries — they are normally measured by distance or time, not a 1RM. These thresholds are a reasonable-effort estimate and the least trustworthy number on this page.' },
 };
 
 /* Back-compat alias: the ratio-only view of LIFTS. */
