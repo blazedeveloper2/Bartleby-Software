@@ -86,12 +86,18 @@ export const PROGRAM = [
     {tag:'Skill',ex:[
       {n:'Wrist Prep Rocks',m:'Forearms',s:'2× easy'},
       {n:'Wall Handstand Hold',m:'Front Delts, Side Delts, Traps, Triceps, Core',s:'3×15-30s',b:'Chest To Wall'},
+      /* No-bar alts on this day stay bodyweight — a dumbbell row would keep
+         the pull muscles fed but trains none of the straight-arm scapular
+         control the skill work is for. Both run under a sturdy table edge:
+         the scapular row is the bottom of an inverted row — arms straight,
+         pinch the shoulder blades together, let them spread, nothing else
+         moves. */
       {n:'Scapular Pulls',m:'Lats, Mid Traps, Rhomboids, Forearms',s:'3×5-8',b:'Dead Hang',bc:'grip',
-       req:'bar', alt:{n:'Scapular Rows',m:'Rhomboids, Mid Traps, Lats',s:'3×8-10',b:'30-45°',bc:'bench-30'}},
+       req:'bar', alt:{n:'Scapular Rows',m:'Rhomboids, Mid Traps, Lats',s:'3×8-10',b:'Under Table'}},
     ]},
     {tag:null,ex:[
       {n:'Chin-Ups',m:'Lats, Biceps, Rhomboids, Forearms',s:'3×5-8',b:'Supinated Grip',bc:'grip',
-       req:'bar', alt:{n:'Single-Arm Rows',m:'Lats, Rhomboids, Rear Delts, Biceps',s:'3×5-8 /arm',b:'Flat 0°',bc:'bench-flat'}},
+       req:'bar', alt:{n:'Inverted Rows',m:'Lats, Rhomboids, Rear Delts, Biceps, Forearms',s:'3×5-8',b:'Under Table'}},
       {n:'Push-Ups',m:'Chest, Triceps, Front Delts, Serratus Anterior, Core',s:'3×5-8'},
       {n:'Pike Push-Ups',m:'Front Delts, Side Delts, Triceps, Upper Chest',s:'3×5-8'},
       {n:'Bench Dips',m:'Triceps, Chest, Front Delts',s:'3×8-12',b:'Hands On Bench',bc:'bench-flat'},
