@@ -80,12 +80,20 @@ export const PROGRAM = [
      the pull muscles two. Structure follows the r/bodyweightfitness
      Recommended Routine — skill work fresh at the front, strength work at
      3×5-8 (progress to a harder variation at the top of the range), body-line
-     holds at the end. The skill block is what eventually becomes a
-     freestanding handstand; keep the holds honest rather than long. */
+     holds at the end. The skill block is the inversion ladder: the wall
+     hold builds the shape and the frog stand builds the balance, and when
+     both are clean they merge into freestanding work. Keep the holds
+     honest rather than long. */
   {day:'sat',since:'2026-08-18',label:'Upper · Calisthenics',sections:[
     {tag:'Skill',ex:[
       {n:'Wrist Prep Rocks',m:'Forearms',s:'2× easy'},
       {n:'Wall Handstand Hold',m:'Front Delts, Side Delts, Traps, Triceps, Core',s:'3×15-30s',b:'Chest To Wall'},
+      /* The first hand-balance a beginner can actually hold: squat, knees
+         on bent elbows, lean until the feet float. It teaches the forward
+         lean and finger-pressure balance every inversion runs on. Start at
+         3-5s holds; at a clean 20-30s, move to crow (arms straighter) and
+         start taking one foot off the wall in the handstand. */
+      {n:'Frog Stand',m:'Front Delts, Triceps, Forearms, Core',s:'3×5-20s',b:'Knees On Elbows'},
       /* No-bar alts on this day stay bodyweight — a dumbbell row would keep
          the pull muscles fed but trains none of the straight-arm scapular
          control the skill work is for. Scapular push-ups need no kit at all:
@@ -106,8 +114,11 @@ export const PROGRAM = [
          disguise. */
       {n:'Chin-Ups',m:'Lats, Biceps, Rhomboids, Forearms',s:'3×5-8',b:'Supinated Grip',bc:'grip',
        req:'bar', alt:{n:'Reverse Snow Angels',m:'Rear Delts, Mid Traps, Rhomboids',s:'3×10-15',b:'Prone On Bench',bc:'bench-flat'}},
-      {n:'Push-Ups',m:'Chest, Triceps, Front Delts, Serratus Anterior, Core',s:'3×5-8'},
-      {n:'Pike Push-Ups',m:'Front Delts, Side Delts, Triceps, Upper Chest',s:'3×5-8'},
+      {n:'Push-Ups',m:'Chest, Triceps, Front Delts, Serratus Anterior, Core',s:'3×5-8',b:'Full ROM, Elbows ~45°'},
+      /* The strength line that ends at the handstand push-up: pike on the
+         floor → feet up on the bench → chest-to-wall. Elevate the feet only
+         once 3×8 on the floor is clean. */
+      {n:'Pike Push-Ups',m:'Front Delts, Side Delts, Triceps, Upper Chest',s:'3×5-8',b:'Feet On Bench = Harder',bc:'bench-flat'},
       {n:'Bench Dips',m:'Triceps, Chest, Front Delts',s:'3×8-12',b:'Hands On Bench',bc:'bench-flat'},
     ]},
     /* The rollout takes the hollow hold's slot rather than adding to it —
