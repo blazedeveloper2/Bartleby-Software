@@ -88,12 +88,13 @@ export const PROGRAM = [
       {n:'Wall Handstand Hold',m:'Front Delts, Side Delts, Traps, Triceps, Core',s:'3×15-30s',b:'Chest To Wall'},
       /* No-bar alts on this day stay bodyweight — a dumbbell row would keep
          the pull muscles fed but trains none of the straight-arm scapular
-         control the skill work is for. Both run under a sturdy table edge:
-         the scapular row is the bottom of an inverted row — arms straight,
-         pinch the shoulder blades together, let them spread, nothing else
-         moves. */
+         control the skill work is for. Scapular push-ups need no kit at all:
+         in a plank with arms locked, let the chest sink between the shoulder
+         blades, then push the floor away until the upper back rounds —
+         elbows never bend. Protraction instead of the pull's retraction,
+         which is exactly the shape a handstand loads. */
       {n:'Scapular Pulls',m:'Lats, Mid Traps, Rhomboids, Forearms',s:'3×5-8',b:'Dead Hang',bc:'grip',
-       req:'bar', alt:{n:'Scapular Rows',m:'Rhomboids, Mid Traps, Lats',s:'3×8-10',b:'Under Table'}},
+       req:'bar', alt:{n:'Scapular Push-Ups',m:'Serratus Anterior, Traps, Core',s:'3×8-12',b:'Plank, Arms Locked'}},
     ]},
     {tag:null,ex:[
       {n:'Chin-Ups',m:'Lats, Biceps, Rhomboids, Forearms',s:'3×5-8',b:'Supinated Grip',bc:'grip',
