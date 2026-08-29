@@ -97,8 +97,15 @@ export const PROGRAM = [
        req:'bar', alt:{n:'Scapular Push-Ups',m:'Serratus Anterior, Traps, Core',s:'3×8-12',b:'Plank, Arms Locked'}},
     ]},
     {tag:null,ex:[
+      /* With no bar and no table there is no anchor, and with no anchor
+         there is no true bodyweight pull — so the no-bar slot trains what a
+         body maneuver still can: the full retraction sweep, prone on the
+         bench so the arms can drop below the body line. Lats and biceps are
+         not abandoned, just relocated — Thursday's rows and curls carry
+         them, and the wheel rollout below is a straight-arm lat pull in
+         disguise. */
       {n:'Chin-Ups',m:'Lats, Biceps, Rhomboids, Forearms',s:'3×5-8',b:'Supinated Grip',bc:'grip',
-       req:'bar', alt:{n:'Inverted Rows',m:'Lats, Rhomboids, Rear Delts, Biceps, Forearms',s:'3×5-8',b:'Under Table'}},
+       req:'bar', alt:{n:'Reverse Snow Angels',m:'Rear Delts, Mid Traps, Rhomboids',s:'3×10-15',b:'Prone On Bench',bc:'bench-flat'}},
       {n:'Push-Ups',m:'Chest, Triceps, Front Delts, Serratus Anterior, Core',s:'3×5-8'},
       {n:'Pike Push-Ups',m:'Front Delts, Side Delts, Triceps, Upper Chest',s:'3×5-8'},
       {n:'Bench Dips',m:'Triceps, Chest, Front Delts',s:'3×8-12',b:'Hands On Bench',bc:'bench-flat'},
