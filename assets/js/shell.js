@@ -9,11 +9,13 @@
 
 import workout from '../../apps/workout/index.js';
 import finance from '../../apps/finance/index.js';
-import scripture from '../../apps/scripture/index.js';
 import { toast } from './ui.js';
 import { THEMES, getTheme, setTheme, applyTheme } from './theme.js';
 
-const APPS = [workout, finance, scripture];
+// Scripture is parked in archive/ for now — to bring it back, move
+// archive/apps/scripture and archive/assets/data back to their old paths,
+// then import it here and add it to APPS.
+const APPS = [workout, finance];
 const ACTIVE_KEY = 'bartleby_active_app';
 // Each app declares its own storage prefix, so a new app joins the backup
 // and the storage breakdown by existing rather than by being listed twice.

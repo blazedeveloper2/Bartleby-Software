@@ -26,28 +26,16 @@ Live apps:
   app, each gap in the history can also say roughly what came in: the change in
   your total plus what you logged as spent over the same stretch. That figure is
   labelled as the inference it is.
+Archived (parked in `archive/`, not loaded by the shell — see
+`archive/README.md` to restore):
+
 - **Scripture** — read the Bible with the Church Fathers. **Library** walks the
   canon book by book, or takes a reference in the jump box (`matthew 25`,
   `mt 25:31`, `1cor13`, `ps 23`). Tapping a verse opens it with every patristic
   comment on it, earliest father first, each named with its source work.
   **Saved** keeps the verses you starred, grouped in canon order, with your own
-  note. Everything is offline: no key, no API, no network.
-
-  The data lives in `assets/data/` and is generated, not hand-written:
-
-  - `kjv/` — 66 files, one per book, 31,102 verses. King James, public domain.
-    Source: [aruljohn/Bible-kjv](https://github.com/aruljohn/Bible-kjv).
-  - `commentary/<Book>/<chapter>.json` — 87,184 comments from 335 fathers,
-    from Tertullian to Aquinas. Source:
-    [HistoricalChristianFaith/Commentaries-Database](https://github.com/HistoricalChristianFaith/Commentaries-Database)
-    (public-domain compilation; some entries excerpt copyrighted translations
-    under a fair-use notice). Authors condemned by an ecumenical council are
-    excluded, as are the deuterocanonical books, which the KJV text here does
-    not carry. A note spanning several verses is stored once per chapter and
-    referenced from each verse it covers.
-
-  Coverage is uneven by nature — John 3:16 has 19 comments, most of Numbers
-  has none. The reader says so rather than looking broken.
+  note. Everything is offline: no key, no API, no network. Its generated KJV
+  text and commentary data are archived alongside it.
 
 **Settings** (gear, bottom of the sidebar) holds the theme picker, the
 pull-up-bar toggle, and backup.
@@ -56,6 +44,8 @@ All data is stored locally in your browser (`localStorage`). Nothing is sent
 anywhere. Use **Settings → Export Backup** to save a `.json` file before
 switching devices, and **Import Backup** to restore it. Backups cover every
 `bp_` (workout), `fin_` (finance) and `bs_` (suite settings, e.g. theme) key.
+Scripture's `sc_` keys (stars and notes) stay in the browser untouched while
+the app is archived, but drop out of backups until it is restored.
 
 ## Themes
 
@@ -80,13 +70,12 @@ Bartleby Software/
 │       ├── theme.js          # theme registry, get/set/apply
 │       ├── storage.js        # localStorage helpers
 │       └── ui.js             # toast helper
-│   └── data/
-│       ├── kjv/              # 66 books of KJV text (~4 MB)
-│       └── commentary/       # patristic commentary, one file per chapter (~100 MB)
 ├── apps/
 │   ├── workout/              # index.js + data.js + rank.js + standards.js + workout.css
-│   ├── finance/              # index.js + networth.js + data.js + finance.css
-│   └── scripture/            # index.js + bible.js + scripture.css
+│   └── finance/              # index.js + networth.js + data.js + finance.css
+├── archive/                  # parked apps, kept but not loaded by the shell
+│   ├── apps/scripture/       # index.js + bible.js + scripture.css
+│   └── assets/data/          # kjv/ (~4 MB) + commentary/ (~100 MB)
 ├── manifest.json             # Add to Home Screen (standalone app window)
 ├── .github/workflows/deploy.yml   # auto-deploy to GitHub Pages on every push
 ├── start.bat                 # one-click: run locally (double-click this)

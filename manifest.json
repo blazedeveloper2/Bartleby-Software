@@ -1,7 +1,7 @@
 {
   "name": "Bartleby Software",
   "short_name": "Bartleby",
-  "description": "Local-first workout, finance and scripture tracking.",
+  "description": "Local-first workout and finance tracking.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
