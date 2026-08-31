@@ -27,7 +27,7 @@ let selCat = null, newCatColor = PALETTE[0];
 let draft = { amt: '', date: '', note: '' };
 let noteSugs = [];
 let calOpen = false, calView = '';
-let histMonth = 'all', histCat = 'all', histDay = '';
+let histMonth = 'all', histCat = 'all', histDay = '', histQ = '';
 let histCalOpen = false, histCalView = '';
 let insMode = 'month', insMonth = '', insYear = '';
 let insPickOpen = false, insPickYear = '';
@@ -454,6 +454,9 @@ function renderHistory() {
   if (histDay)             filtered = filtered.filter(t => t.d === histDay);
   else if (histMonth !== 'all') filtered = filtered.filter(t => t.d.startsWith(histMonth));
   if (histCat !== 'all')   filtered = filtered.filter(t => t.cat === histCat);
+  const qq = histQ.trim().toLowerCase();
+  if (qq) filtered = filtered.filter(t =>
+    (t.note || '').toLowerCase().includes(qq) || t.cat.toLowerCase().includes(qq));
   filtered.sort((a, b) => b.d.localeCompare(a.d));
 
   /* A single day is a different question from a month, so the controls say
@@ -462,6 +465,11 @@ function renderHistory() {
       <select class="fx-select" id="hist-month" ${histDay ? 'disabled' : ''}>${monthOpts}</select>
       <select class="fx-select" id="hist-cat">${catOpts}</select>
       <button class="fx-calbtn ${histCalOpen ? 'on' : ''}" data-act="hist-cal" title="Pick a day">${CAL_SVG}</button>
+    </div>
+    <div class="fx-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="hist-q" type="search" placeholder="Search notes — “costco”, “lunch”…" value="${esc(histQ)}" autocomplete="off">
+      ${histQ ? '<button class="fx-search-x" data-act="hist-q-clear" title="Clear search">&times;</button>' : ''}
     </div>
     ${histCalOpen ? histCalHTML(all) : ''}
     ${histDay ? `<div class="fx-dayon">
@@ -478,6 +486,7 @@ function renderHistory() {
 
   if (!filtered.length) {
     const why = !all.length ? 'No expenses logged yet.<br>Add your first on the Add tab.'
+              : qq         ? `No notes or categories match “${esc(histQ.trim())}”${histDay ? ` on ${label}` : histMonth !== 'all' ? ` in ${monthLabel(histMonth)}` : ''}.`
               : histDay    ? `Nothing logged on ${label}.`
               :              'Nothing matches these filters.';
     h += `<div class="fx-empty">${why}</div>`;
@@ -764,6 +773,7 @@ function onClick(e) {
     case 'tab':           switchTab(a.tab); break;
     case 'hist-day-pick': histPickDay(a.d); break;
     case 'hist-day-clear':histClearDay(); break;
+    case 'hist-q-clear':  histQ = ''; renderHistory(); break;
     case 'hist-cal':      histToggleCal(); break;
     case 'hist-cal-shift':histCalShift(+a.d); break;
     case 'pick-cat':      pickCat(a.cat); break;
@@ -846,6 +856,14 @@ function onKeydown(e) {
 function onInput(e) {
   if (e.target.id === 'fx-note') { sizeNote(); renderNoteSugs(); }
   else if (e.target.id === 'fx-color') updateNewColor(e.target.value);
+  else if (e.target.id === 'hist-q') {
+    /* The panel re-renders on every keystroke, which throws the input away
+       mid-word — so the focus and caret have to be handed back by hand. */
+    histQ = e.target.value;
+    renderHistory();
+    const el = q('#hist-q');
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }
 }
 function onOver(e) { const arc = e.target.closest?.('.fx-arc'); if (arc && root.contains(arc)) donutHover(arc.dataset.name); }
 function onOut(e) { const arc = e.target.closest?.('.fx-arc'); if (!arc) return; const to = e.relatedTarget; if (to && to.closest?.('.fx-arc')) return; donutReset(); }
@@ -888,7 +906,7 @@ export default {
     selCat = null; newCatColor = PALETTE[0]; calOpen = false; calView = curMonth();
     draft = { amt: '', date: todayStr(), note: '' };
     noteSugs = [];
-    histMonth = 'all'; histCat = 'all'; histDay = ''; histCalOpen = false; histCalView = '';
+    histMonth = 'all'; histCat = 'all'; histDay = ''; histQ = ''; histCalOpen = false; histCalView = '';
     insMode = 'month'; insMonth = curMonth(); insYear = curYear(); insPickOpen = false;
     insNote = ''; insNoteAll = false;
     nwReset();

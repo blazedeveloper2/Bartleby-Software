@@ -172,7 +172,20 @@
 .tx-date{font-size:10px;color:var(--text-3);font-weight:500;letter-spacing:.3px}
 
 /* ── Filters ── */
-.fx-filters{display:flex;gap:8px;margin-bottom:12px}
+.fx-filters{display:flex;gap:8px;margin-bottom:8px}
+
+/* Search, on its own row — three controls already share the one above */
+.fx-search{position:relative;margin-bottom:12px}
+.fx-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-3);pointer-events:none}
+.fx-search input{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rs);
+  padding:9px 34px 9px 34px;color:var(--text);font-family:var(--font);font-size:13px;font-weight:500;outline:none;
+  -webkit-appearance:none;appearance:none}
+.fx-search input::placeholder{color:var(--text-3)}
+.fx-search input:focus{border-color:var(--green)}
+.fx-search input::-webkit-search-cancel-button{display:none}
+.fx-search-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;
+  border-radius:6px;background:none;color:var(--text-3);font-size:17px;line-height:1;cursor:pointer;transition:all .13s}
+.fx-search-x:hover{color:var(--text);background:var(--bg-alt)}
 .fx-select{flex:1;min-width:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;color:var(--text);font-family:var(--font);font-size:13px;font-weight:500;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5068' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
 .fx-select:focus{border-color:var(--green)}
 
