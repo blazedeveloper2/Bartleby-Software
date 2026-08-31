@@ -1,9 +1,9 @@
-/* ═══════════════════════════════════════════════════════════
-   WORKOUT APP — component styles (scoped to the workout root).
+﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   WORKOUT APP â€” component styles (scoped to the workout root).
    Design tokens + reset + toast + base day-card live in tokens.css.
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Internal tab nav ── */
+/* â”€â”€ Internal tab nav â”€â”€ */
 .wk .nav{position:sticky;top:var(--shell-bar-h,0);z-index:50;background:var(--bg);border-bottom:1px solid var(--border)}
 .wk .nav-inner{display:flex;max-width:640px;margin:0 auto;padding:0 16px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .wk .nav-inner::-webkit-scrollbar{display:none}
@@ -15,7 +15,7 @@
 .wk .panel.active{display:block;animation:panel-in .26s cubic-bezier(.22,.68,0,1.1) both}
 @keyframes panel-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-/* ── Day / exercise rows ── */
+/* â”€â”€ Day / exercise rows â”€â”€ */
 .wk .day-badge.mon{background:var(--blue)}.wk .day-badge.tue{background:var(--purple)}.wk .day-badge.thu{background:var(--amber)}.wk .day-badge.fri{background:var(--red)}.wk .day-badge.sat{background:var(--green)}
 .wk .day-badge.bw{background:var(--green)}.wk .day-badge.hist{background:var(--purple)}
 .wk .day-prog{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-3);padding:3px 9px;border-radius:2px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--border);transition:all .3s}
@@ -26,7 +26,7 @@
 .wk .ex-row{position:relative;display:grid;grid-template-columns:26px 20px 1fr auto;align-items:center;gap:9px;
   padding:10px 16px 10px 18px;transition:background .12s;cursor:pointer}
 .wk .ex-row:hover{background:var(--bg-hover)}
-/* left rail lights up when the row is done — quest-list language */
+/* left rail lights up when the row is done â€” quest-list language */
 .wk .ex-rail{position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--border-lt);transition:background .25s ease}
 .wk .ex-row.off .ex-rail{background:var(--green)}
 .wk .ex-idx{font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--text-3);letter-spacing:.5px;text-align:center;transition:color .25s ease}
@@ -53,7 +53,7 @@
 .wk .bench-tag{font-size:9.5px;font-weight:700;letter-spacing:.3px;padding:3px 7px;border-radius:2px;white-space:nowrap}
 .wk .bench-flat,.wk .bench-55{background:var(--blue-d);color:var(--blue)}.wk .bench-30{background:var(--red-d);color:var(--pink)}.wk .bench-85{background:var(--green-d);color:var(--amber)}
 .wk .grip{background:var(--blue-d);color:var(--purple)}
-/* A finished row dims but stays legible — the ticked box is the real signal,
+/* A finished row dims but stays legible â€” the ticked box is the real signal,
    so this only needs to be enough to tell done from not-done at a glance. */
 .wk .ex-row.off .ex-name{opacity:.62}
 .wk .ex-musc,.wk .ex-sets,.wk .ex-wt,.wk .bench-tag{transition:opacity .26s ease}
@@ -63,7 +63,7 @@
 .wk .clear-btn{background:var(--bg-card);border:1px solid var(--border);color:var(--text-2);font-family:var(--font);font-size:12px;font-weight:600;padding:10px 24px;border-radius:var(--r);cursor:pointer;transition:all .15s}
 .wk .clear-btn:hover{background:var(--bg-hover);color:var(--text)}
 
-/* ── Muscle modal ── */
+/* â”€â”€ Muscle modal â”€â”€ */
 .mm-overlay{position:fixed;inset:0;background:var(--ol-bg);backdrop-filter:blur(16px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
 .mm-overlay.on{opacity:1;pointer-events:all}
 .mm-card{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:13px;
@@ -95,7 +95,7 @@
 .m-base{fill:var(--map-base);transition:fill .2s}
 .m-region{fill:var(--map-region);stroke:none;transition:fill .25s}
 /* Only lit shapes get the hairline. It's what stops two lit neighbours from
-   fusing into one blob — without it the six ab rows read as a single slab —
+   fusing into one blob â€” without it the six ab rows read as a single slab â€”
    but drawn on the whole body it makes the figure look cracked. */
 .m-region[class*="lvl-"]{stroke:var(--map-edge);stroke-width:.6}
 /* set while openMM() swaps the highlight, so the new one appears instantly */
@@ -118,7 +118,7 @@
   .m-side{max-width:230px;width:100%}
 }
 
-/* ── Working-weight editor inside the muscle modal ── */
+/* â”€â”€ Working-weight editor inside the muscle modal â”€â”€ */
 .mm-wt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)}
 .mm-wt-lbl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
 .mm-wt-box{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;transition:border-color .15s}
@@ -127,7 +127,7 @@
 .mm-wt-in::placeholder{color:var(--text-3)}
 .mm-wt-u{font-size:12px;color:var(--text-3);font-weight:600}
 
-/* ── Where this lift stands, right under the input that changes it ── */
+/* â”€â”€ Where this lift stands, right under the input that changes it â”€â”€ */
 .mm-rank{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--border)}
 .mm-rank-l{font-family:var(--mono);font-size:23px;font-weight:800;letter-spacing:-1px;line-height:1;min-width:30px;text-align:center}
 .mm-rank-b{min-width:0}
@@ -141,7 +141,7 @@
   background:var(--bg);border-left:2px solid var(--amber)}
 .mm-pend b{color:var(--text-2);font-family:var(--mono);font-weight:700}
 
-/* ── Bodyweight tab ── */
+/* â”€â”€ Bodyweight tab â”€â”€ */
 .bw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
 .bw-stat{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:7px;
   box-shadow:inset 0 0 0 1px var(--border);
@@ -198,14 +198,14 @@
 .bw-h-btn.del:hover{color:var(--red);border-color:var(--red);background:var(--red-d)}
 .bw-h-btn svg{width:13px;height:13px}
 
-/* ═══════════════════════════════════════════════════════════
-   PROGRESS TAB — rank, streaks, heatmap, milestones
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PROGRESS TAB â€” rank, streaks, heatmap, milestones
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .wk .day-top-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .wk .day-xp{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--text-3);white-space:nowrap}
 .wk .day-xp.logged{color:var(--green);background:var(--green-d);padding:3px 8px;border-radius:4px}
 
-/* ── shared card shell ── */
+/* â”€â”€ shared card shell â”€â”€ */
 .pg-card{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:11px;
   box-shadow:inset 0 0 0 1px var(--border);
   clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
@@ -216,7 +216,7 @@
 .pg-kicker{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
 .pg-empty{padding:20px 4px;text-align:center;color:var(--text-3);font-size:12.5px;line-height:1.5}
 
-/* ── rank hero (strength-derived) ── */
+/* â”€â”€ rank hero (strength-derived) â”€â”€ */
 .rk-hero{position:relative;overflow:hidden;background:var(--bg-card);border:none;border-radius:0;--n:14px;
   box-shadow:inset 0 0 0 1px var(--border);
   clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
@@ -249,8 +249,8 @@
   background:var(--bg);border:1px solid var(--border);border-left:2px solid var(--amber);border-radius:var(--rs)}
 .rk-pending b{color:var(--text-2);font-weight:700}
 
-/* ── percentile band track: widths are to scale, so it's obvious how wide
-      "average" is and how narrow "elite" is ── */
+/* â”€â”€ percentile band track: widths are to scale, so it's obvious how wide
+      "average" is and how narrow "elite" is â”€â”€ */
 .rk-track{position:relative;margin-top:14px;padding-bottom:2px}
 .rk-segs{position:relative;display:flex;height:16px;border-radius:0;overflow:hidden;gap:1px}
 /* hairlines every 5% so the bar reads as chunked rather than a smooth fill */
@@ -264,7 +264,7 @@
 .rk-lift .rk-segs{height:9px}
 .rk-lift .rk-marker{top:-3px;height:15px;width:2.5px}
 
-/* ── straight-answer card ── */
+/* â”€â”€ straight-answer card â”€â”€ */
 .rk-verdict-t{font-size:13px;color:var(--text);line-height:1.55;font-weight:500}
 .rk-verdict-s{font-size:12px;color:var(--text-2);line-height:1.55;margin-top:8px}
 .rk-verdict-s b{color:var(--text)}
@@ -274,7 +274,7 @@
 .rk-vw-n{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rk-vw-p{font-family:var(--mono);font-size:11px;font-weight:700}
 
-/* ── daily scripture ── */
+/* â”€â”€ daily scripture â”€â”€ */
 .rk-verse{position:relative;overflow:hidden}
 .rk-verse-mark{position:absolute;top:-14px;right:10px;font-size:82px;line-height:1;color:var(--blue);opacity:.1;font-family:Georgia,serif;pointer-events:none}
 .rk-verse-t{font-size:14px;line-height:1.6;color:var(--text);font-weight:500;position:relative}
@@ -286,7 +286,7 @@
 .pg-next-w{color:var(--text);font-weight:600}
 .pg-next-owe{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--amber);letter-spacing:.3px}
 
-/* ── per-lift breakdown ── */
+/* â”€â”€ per-lift breakdown â”€â”€ */
 .rk-reps{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
   background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:12px}
 .rk-reps-l{font-size:11px;color:var(--text-3);font-weight:600}
@@ -320,7 +320,7 @@
 .pg-tiles{margin-bottom:14px}
 .pg-tiles .bw-stat-u{margin-left:4px}
 
-/* ── consistency heatmap ── */
+/* â”€â”€ consistency heatmap â”€â”€ */
 .pg-hm-wrap{display:flex;gap:6px;align-items:stretch}
 .pg-hm-dow{display:grid;grid-template-rows:repeat(7,1fr);gap:3px;flex-shrink:0}
 .pg-hm-dow span{font-family:var(--mono);font-size:8px;font-weight:600;color:var(--text-3);display:flex;align-items:center;line-height:1}
@@ -337,7 +337,7 @@
 .pg-legend span{display:flex;align-items:center;gap:5px}
 .pg-legend i{width:9px;height:9px;aspect-ratio:auto;display:block;flex-shrink:0}
 
-/* ── progression ── */
+/* â”€â”€ progression â”€â”€ */
 .pg-big{text-align:center;padding:6px 0 16px}
 .pg-big-v{font-family:var(--mono);font-size:34px;font-weight:700;letter-spacing:-1.5px;color:var(--green);line-height:1}
 .pg-big-u{font-size:14px;color:var(--text-3);font-weight:500;margin-left:3px;letter-spacing:0}
@@ -357,7 +357,7 @@
 /* a deload is red because it is a real subtraction; a rollback is grey
    because it is the record admitting nothing happened at all */
 .pg-pr.down .pg-pr-up{color:var(--red);background:var(--red-d)}
-/* dimmed by colour, not opacity — the arcade theme's tile-in animation
+/* dimmed by colour, not opacity â€” the arcade theme's tile-in animation
    fills forwards to opacity:1 and would wash any opacity rule straight out */
 .pg-pr.void .pg-pr-ex{color:var(--text-3);font-weight:500}
 .pg-pr.void .pg-pr-w{text-decoration:line-through;color:var(--text-3)}
@@ -366,7 +366,7 @@
 .pg-pr.void .pg-pr-tag{color:var(--text-3)}
 .pg-big-v.down{color:var(--red)}
 
-/* ── milestones ── */
+/* â”€â”€ milestones â”€â”€ */
 .pg-b-group{margin-bottom:16px}
 .pg-b-group:last-child{margin-bottom:0}
 .pg-b-gt{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -385,14 +385,14 @@
 .pg-b-n{font-size:11px;font-weight:700;line-height:1.25}
 .pg-b-r{font-size:9.5px;color:var(--text-3);margin-top:4px;line-height:1.35}
 .pg-b.on .pg-b-r{color:var(--green)}
-/* earned, but no longer true at your current weights — kept, and labelled */
+/* earned, but no longer true at your current weights â€” kept, and labelled */
 .pg-b.lapsed{background:transparent;box-shadow:inset 0 0 0 1px var(--amber)}
 .pg-b.lapsed .pg-b-ico{background:transparent;border-color:var(--amber);color:var(--amber)}
 .pg-b.lapsed .pg-b-r{color:var(--amber)}
 .pg-b-lapse{font-size:11px;line-height:1.55;color:var(--text-3);background:var(--bg);border:1px solid var(--border);
   border-left:2px solid var(--amber);border-radius:var(--rs);padding:9px 11px;margin-bottom:14px}
 
-/* ── session log ── */
+/* â”€â”€ session log â”€â”€ */
 .pg-s-list{margin:0 -14px -14px;border-top:1px solid var(--border)}
 .pg-s-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);transition:background .12s}
 .pg-s-row:last-child{border-bottom:none}
@@ -400,9 +400,9 @@
 .pg-s-n{font-size:12.5px;font-weight:600;line-height:1.25}
 .pg-s-d{font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:3px}
 
-/* ── reset ──
+/* â”€â”€ reset â”€â”€
    The only control in the app that destroys something. The danger is carried
-   inside the card — red ticks, a red-edged warning strip, a red button — the
+   inside the card â€” red ticks, a red-edged warning strip, a red button â€” the
    same way .rk-pending and .pg-b-lapse carry amber, rather than by an outer
    rim: the card shell is themed and clip-path'd, and a border on it would be
    cut off along the chamfer. */
@@ -446,7 +446,7 @@
   font-size:13px;font-weight:600;padding:11px;border-radius:var(--rs);cursor:pointer;transition:all .14s}
 .rk-rs-x:hover{background:var(--bg-hover);color:var(--text)}
 
-/* ── how power works / empty start ── */
+/* â”€â”€ how power works / empty start â”€â”€ */
 .pg-how{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pg-how>div{font-size:11.5px;color:var(--text-2);background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px}
 .pg-how b{font-family:var(--mono);color:var(--blue);font-weight:700}
@@ -456,7 +456,7 @@
 .pg-start-n{font-size:11.5px;color:var(--text-2);margin-top:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs)}
 .pg-start-n b{font-family:var(--mono);color:var(--green)}
 
-/* ── rank-up / milestone celebration ── */
+/* â”€â”€ rank-up / milestone celebration â”€â”€ */
 .lv-overlay{position:fixed;inset:0;background:var(--ol-bg);backdrop-filter:blur(16px);z-index:250;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
 .lv-overlay.on{opacity:1;pointer-events:all}
 .lv-card{position:relative;background:var(--bg-card);border:none;border-radius:0;--n:13px;
@@ -518,104 +518,3 @@
   .bw-stat-v{font-size:16px}
 }
 
-/* ═══════════════════ STUDY TAB ═══════════════════ */
-.st-nav{display:flex;gap:6px;padding:16px 16px 4px;max-width:640px;margin:0 auto;flex-wrap:wrap}
-.st-tab{flex:1 1 auto;padding:8px 12px;border-radius:var(--rs);background:var(--bg-card);border:1px solid var(--border);
-  color:var(--text-3);font-family:var(--font);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  cursor:pointer;transition:all .15s;white-space:nowrap}
-.st-tab:hover{color:var(--text-2);border-color:var(--border-lt)}
-.st-tab.sel{background:var(--blue-d);border-color:var(--sel-bd);color:var(--map-p)}
-.st-body{max-width:640px;margin:0 auto;padding:8px 16px 32px}
-
-.st-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:16px 16px 18px;margin-bottom:12px}
-.st-h{font-size:15px;font-weight:700;letter-spacing:.2px;margin-bottom:2px}
-.st-sub{font-size:11.5px;color:var(--text-3);margin-bottom:12px;font-style:italic}
-.st-card p{font-size:13px;line-height:1.62;color:var(--text-2);margin-bottom:10px}
-.st-card p b{color:var(--text);font-weight:600}
-.st-card p i{color:var(--text-2)}
-
-/* term / definition rows — the workhorse of this tab */
-.st-dl{margin:12px 0 4px;border-top:1px solid var(--border)}
-.st-dl dt{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--map-p);padding:11px 0 3px}
-.st-dl dd{font-size:12.5px;line-height:1.6;color:var(--text-2);padding-bottom:11px;border-bottom:1px solid var(--border)}
-.st-dl dd b{color:var(--text);font-weight:600}
-
-.st-note{margin:12px 0 2px;padding:11px 13px;border-radius:var(--rs);background:var(--bg-alt);
-  border-left:2px solid var(--map-s);font-size:12.5px;line-height:1.6;color:var(--text-2)}
-.st-note b{color:var(--text);font-weight:600}
-
-.st-srcs{margin-top:14px;padding-top:10px;border-top:1px solid var(--border)}
-.st-srcs>span{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)}
-.st-srcs ul{list-style:none;margin-top:5px}
-.st-srcs li{font-size:11.5px;line-height:1.55}
-.st-srcs a{color:var(--text-3);text-decoration:none;border-bottom:1px dotted var(--border-lt)}
-.st-srcs a:hover{color:var(--map-p);border-bottom-color:var(--map-p)}
-
-.st-disclaimer{max-width:640px;font-size:11px;line-height:1.6;color:var(--text-3);font-style:italic;padding:4px 2px 0}
-
-/* ── the calculator ── */
-.st-goals{display:flex;gap:6px;margin-bottom:14px}
-.st-goal{flex:1;padding:9px 4px;border-radius:var(--rs);background:var(--bg);border:1px solid var(--border);
-  color:var(--text-3);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
-.st-goal:hover{border-color:var(--border-lt);color:var(--text-2)}
-.st-goal.sel{background:var(--blue-d);border-color:var(--sel-bd);color:var(--map-p)}
-.st-figs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.st-fig{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:10px 6px;text-align:center}
-.st-fig-l{display:block;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3)}
-.st-fig b{display:block;font-size:19px;font-weight:700;color:var(--text);margin:3px 0 1px;font-variant-numeric:tabular-nums}
-.st-fig-u{display:block;font-size:9px;color:var(--text-3)}
-.st-bar{display:flex;height:26px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--border)}
-.st-bar-seg{display:flex;align-items:center;justify-content:center;gap:5px;font-size:10px;font-weight:600;
-  color:var(--bg);white-space:nowrap;overflow:hidden;min-width:0}
-.st-bar-seg.p{background:var(--map-p)}.st-bar-seg.f{background:var(--map-s)}.st-bar-seg.c{background:var(--map-t);color:var(--text-2)}
-.st-bar-seg span{opacity:.85}
-.st-kcal{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;font-weight:600;
-  letter-spacing:.5px;text-transform:uppercase;color:var(--text-3)}
-.st-kcal input{width:92px;padding:7px 9px;border-radius:var(--rs);background:var(--bg-input);border:1px solid var(--border);
-  color:var(--text);font-family:var(--font);font-size:13px;font-variant-numeric:tabular-nums}
-.st-kcal input:focus{outline:none;border-color:var(--map-p)}
-.st-empty{font-size:12.5px;line-height:1.6;color:var(--text-3);padding:6px 0}
-.st-empty b{color:var(--map-p)}
-
-/* ── anatomy ── */
-.st-map{display:flex;justify-content:center;align-items:flex-start;gap:14px;padding:4px 0 12px}
-.st-mlist{display:flex;flex-wrap:wrap;gap:5px;padding-bottom:14px;border-bottom:1px solid var(--border)}
-.st-m{padding:5px 10px;border-radius:20px;background:var(--bg);border:1px solid var(--border);color:var(--text-3);
-  font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s}
-.st-m:hover{border-color:var(--border-lt);color:var(--text-2)}
-.st-m.sel{background:var(--blue-d);border-color:var(--sel-bd);color:var(--map-p);font-weight:600}
-.st-mdetail{padding-top:14px}
-.st-mdetail h4{font-size:14px;font-weight:700;margin-bottom:4px}
-.st-what{font-size:11.5px!important;color:var(--text-3)!important;font-style:italic;margin-bottom:8px!important}
-.st-trained{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:10px}
-.st-trained>span:first-child{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
-  color:var(--text-3);margin-right:3px}
-.st-trained.none{font-size:11.5px;color:var(--text-3);font-style:italic}
-.st-tr{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);color:var(--text-3)}
-.st-tr.l1{background:var(--blue-d);border-color:var(--sel-bd);color:var(--map-p)}
-.st-tr.l2{color:var(--map-s);border-color:var(--map-t)}
-
-/* ── the zoom-cascade diagram ── */
-.st-diagram{width:100%;height:auto;margin:6px 0 12px;display:block}
-.st-dg-fill{fill:var(--map-region);stroke:var(--border-lt);stroke-width:1}
-.st-dg-line{stroke:var(--map-s);stroke-width:1.6;fill:none;stroke-linecap:round}
-.st-dg-ar{stroke:var(--text-3);stroke-width:1.2}
-.st-dg-arrow{fill:var(--text-3)}
-.st-dg-t{fill:var(--text);font-size:11px;font-weight:700;text-anchor:middle;font-family:var(--font)}
-.st-dg-s{fill:var(--text-3);font-size:9px;text-anchor:middle;font-family:var(--font)}
-.st-dg-cap{fill:var(--text-3);font-size:9.5px;text-anchor:middle;font-style:italic;font-family:var(--font)}
-.st-dg-z{stroke:var(--text-2);stroke-width:2;stroke-linecap:round}
-.st-dg-actin{stroke:var(--map-s);stroke-width:2;fill:none;stroke-linecap:round}
-.st-dg-myosin{fill:var(--map-p)}
-
-/* ── optional photos: drop files into assets/img/study/ ── */
-.st-photo{margin:12px 0 4px}
-.st-photo img{width:100%;height:auto;border-radius:var(--rs);border:1px solid var(--border);display:block}
-.st-photo figcaption{font-size:10.5px;color:var(--text-3);text-align:center;padding-top:5px;font-style:italic}
-
-@media (max-width:420px){
-  .st-figs{grid-template-columns:repeat(2,1fr)}
-  .st-map{flex-direction:column;align-items:center;gap:10px}
-  .st-map .m-side{max-width:230px;width:100%}
-  .st-bar-seg span{display:none}
-}

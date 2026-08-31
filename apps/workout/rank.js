@@ -711,7 +711,7 @@ const RESETS = [
   { id:'wt',  key:'bp_wt',  n:'Working weights', u:'lift',
     d:'The letter is computed from these. Clearing them takes every lift back to unscored and the rank to none.' },
   { id:'bw',  key:'bp_bw',  n:'Bodyweight log', u:'entry', p:'entries',
-    d:'Every standard is relative to bodyweight, so the rank disappears until you log one again. The nutrition targets in Study go with it.' },
+    d:'Every standard is relative to bodyweight, so the rank disappears until you log one again.' },
   { id:'ach', key:'bp_ach', n:'Milestone dates', u:'unlocked', p:'unlocked',
     d:'Only the dates. Anything still true at your current numbers re-earns itself on the next render — to genuinely re-lock a milestone, clear what earned it as well.' },
   { id:'chk', key:'bp_chk', n:'Checkmarks', u:'ticked', p:'ticked',

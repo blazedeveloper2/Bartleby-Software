@@ -1,6 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   BODY MAP — the two figures, shared by the exercise modal and the
-   Study tab. Kept in its own module so neither owns it.
+   BODY MAP — the two figures, used by the exercise modal.
    ═══════════════════════════════════════════════════════════ */
 
 /* ═══════════════════ THE BODY MAP ═══════════════════

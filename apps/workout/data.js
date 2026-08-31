@@ -4,7 +4,7 @@
 
 /* An exercise with an `alt` names the kit it needs in `req` ('bar', 'wheel').
    Turn that piece of equipment off in Settings and the whole app — rendering,
-   scoring, badge counts, the Study tab — reads the `alt` version instead, so
+   scoring, badge counts — reads the `alt` version instead, so
    the program still works for anyone without a pull-up bar or an ab wheel.
    An `alt` with no `req` never swaps; name the equipment.
 

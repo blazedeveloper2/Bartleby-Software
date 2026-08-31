@@ -15,7 +15,6 @@ import {
   resetPanel, resetToggle, resetToggleAll, resetSelection, applyReset, resetDismiss,
 } from './rank.js';
 import { MUSCLE_SVG } from './bodymap.js';
-import { renderStudy, studySetSec, studySetGoal, studySetMuscle, studySetKcal } from './study.js';
 
 /* ── namespaced storage ── */
 const chks = () => load('bp_chk', {});
@@ -532,7 +531,6 @@ function switchTab(tab) {
   root.querySelectorAll('.wk .panel').forEach(pl => pl.classList.remove('active'));
   q('#p-' + tab).classList.add('active');
   if (tab === 'rank') renderRank(root);
-  if (tab === 'study') renderStudy(root);
 }
 
 /* ═══════════════════ EVENT DELEGATION ═══════════════════ */
@@ -566,14 +564,10 @@ function onClick(e) {
     case 'rk-reset-tgl':   resetToggle(a.k, root); break;
     case 'rk-reset-all':   resetToggleAll(root); break;
     case 'rk-reset-go':    doReset(); break;
-    case 'st-sec':    studySetSec(a.k, root); break;
-    case 'st-goal':   studySetGoal(a.k, root); break;
-    case 'st-muscle': studySetMuscle(a.k, root); break;
   }
 }
 function onChange(e) {
   if (e.target.id === 'mm-wt') setMMWeight(e.target);
-  else if (e.target.id === 'st-kcal') studySetKcal(e.target.value, root);
 }
 
 /* Hover, for anyone on a mouse: over a shape names it, over a chip lights
@@ -611,13 +605,11 @@ function template() {
       <button class="tab active" data-act="tab" data-tab="program">Program</button>
       <button class="tab" data-act="tab" data-tab="bw">Weight</button>
       <button class="tab" data-act="tab" data-tab="rank">Rank</button>
-      <button class="tab" data-act="tab" data-tab="study">Study</button>
     </div></nav>
     <div class="app-wrap">
       <div class="panel active" id="p-program"></div>
       <div class="panel" id="p-bw"></div>
       <div class="panel" id="p-rank"></div>
-      <div class="panel" id="p-study"></div>
     </div>
 
     <div class="mm-overlay" id="mm-ol">
