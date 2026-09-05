@@ -121,14 +121,14 @@ Export/Import to move between them.
 
 A one-time setup, then it auto-deploys forever.
 
-**1. Create the repo** (on <https://github.com/new>): name it `bartleby-software`,
+**1. Create the repo** (on <https://github.com/new>): name it `bartleby-web`,
 keep it Public (Pages is free for public repos), and **don't** add a README —
 this folder already has one.
 
 **2. Connect this folder and push** (run once, in this folder):
 
 ```
-git remote add origin https://github.com/<your-username>/bartleby-software.git
+git remote add origin https://github.com/<your-username>/bartleby-web.git
 git branch -M main
 git push -u origin main
 ```
@@ -137,7 +137,7 @@ git push -u origin main
 Source: GitHub Actions**. The included workflow does the rest.
 
 Your site goes live at:
-`https://<your-username>.github.io/bartleby-software/`
+`https://<your-username>.github.io/bartleby-web/`
 
 ### Syncing changes after that
 
@@ -150,5 +150,5 @@ If you'd rather type it, the same thing from a terminal in this folder is:
 git add -A; git commit -m "describe what you changed"; git push
 ```
 
-The repo is **blazedeveloper2/Bartleby-Software**. It stays Public because
+The repo is **blazedeveloper2/Bartleby-Web**. It stays Public because
 GitHub Pages on a free account only serves public repos.
