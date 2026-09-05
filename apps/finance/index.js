@@ -169,7 +169,7 @@ function renderAdd() {
 
       <div class="fx-field fx-field-b"><div class="fx-lbl">Date</div><button class="fx-datebtn ${calOpen ? 'open' : ''}" data-act="cal-toggle"><span>${fmtDateBtn(date)}</span>${CAL_SVG}</button></div>
       ${calOpen ? calGrid(calView) : ''}
-      <div class="fx-field fx-field-b"><div class="fx-lbl">Note <span class="fx-opt">(optional)</span></div><textarea class="fx-in fx-note" id="fx-note" rows="1" placeholder="e.g. lunch with Sam — split the bill three ways" maxlength="200">${esc(draft.note)}</textarea><div class="fx-sug" id="fx-sug"></div></div>
+      <div class="fx-field fx-field-b"><div class="fx-lbl">Note <span class="fx-opt">(optional)</span></div><textarea class="fx-in fx-note" id="fx-note" rows="1" placeholder="Optional Note" maxlength="200">${esc(draft.note)}</textarea><div class="fx-sug" id="fx-sug"></div></div>
 
       <div class="fx-actions">
         <button class="fx-btn pri" data-act="save-tx">${editing ? 'Update Expense' : 'Add Expense'}</button>
@@ -468,7 +468,7 @@ function renderHistory() {
     </div>
     <div class="fx-search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="hist-q" type="search" placeholder="Search notes — “costco”, “lunch”…" value="${esc(histQ)}" autocomplete="off">
+      <input id="hist-q" type="search" placeholder="Search notes" value="${esc(histQ)}" autocomplete="off">
       ${histQ ? '<button class="fx-search-x" data-act="hist-q-clear" title="Clear search">&times;</button>' : ''}
     </div>
     ${histCalOpen ? histCalHTML(all) : ''}
@@ -736,20 +736,30 @@ function renderInsights() {
   h += noteTrendHTML(list, total);
   h += `<div class="fx-chart-card"><div class="fx-chart-title">Last 12 Months</div>${trendSVG(last12())}</div>`;
   q('#fp-insights').innerHTML = h;
+  fitDonutTotal();
 }
 
 /* donut hover/tap */
+/* the amount can outgrow the ring's 96px hole — step the font down until it fits */
+function fitDonutTotal() {
+  const tot = q('#fx-donut-total'); if (!tot) return;
+  tot.style.fontSize = '';
+  for (let size = 20; size > 11 && tot.scrollWidth > tot.clientWidth; size--)
+    tot.style.fontSize = size + 'px';
+}
 function donutHover(name) {
   const tot = q('#fx-donut-total'), sub = q('#fx-donut-sub'); if (!tot) return;
   const arc = root.querySelector(`.fx-arc[data-name="${CSS.escape(name)}"]`);
   if (arc) tot.textContent = arc.dataset.amt;
   sub.textContent = name;
+  fitDonutTotal();
   root.querySelectorAll('.fx-arc').forEach(a => a.classList.toggle('hot', a.dataset.name === name));
 }
 function donutReset() {
   const mid = q('#fx-donut-mid'); if (!mid) return;
   q('#fx-donut-total').textContent = mid.dataset.total;
   q('#fx-donut-sub').textContent = 'Spent';
+  fitDonutTotal();
   root.querySelectorAll('.fx-arc').forEach(a => a.classList.remove('hot'));
 }
 
@@ -759,6 +769,7 @@ function switchTab(tab) {
   root.querySelectorAll('.fin .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   root.querySelectorAll('.fin .panel').forEach(p => p.classList.remove('active'));
   q('#fp-' + tab).classList.add('active');
+  if (tab === 'insights') fitDonutTotal(); // hidden panels measure 0, so fit once visible
 }
 function renderAll() { renderAdd(); renderHistory(); renderInsights(); renderNetWorth(root); }
 

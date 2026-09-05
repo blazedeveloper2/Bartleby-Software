@@ -65,6 +65,32 @@ html[data-theme="dark"] {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   LIGHT — bright paper-white palette. No animation set.
+   ═══════════════════════════════════════════════════════════ */
+html[data-theme="light"] {
+  --bg:#f4f5f9;--bg-card:#ffffff;--bg-alt:#edeff5;--bg-hover:#e5e8f0;
+  --bg-input:#ffffff;--border:#dcdfe9;--border-lt:#cbd0df;
+
+  --text:#1b1f2d;--text-2:#5b6278;--text-3:#98a0b4;
+
+  --blue:#2563eb;--blue-d:#2563eb1a;          /* primary accent */
+  --purple:#7c3aed;--amber:#d97706;
+  --red:#dc2626;--red-d:#dc26261a;
+  --green:#16a34a;--green-d:#16a34a18;--pink:#db2777;
+
+  --glow:#2563eb;--glow-2:#7c3aed;
+  --sel-bd:#2563eb40;--ol-bg:#f4f5f9e8;--btn-hover:#1d4ed8;
+  --map-base:#e5e8f0;--map-region:#dcdfe9;
+  /* body-map tiers: accent, then blended 55% and 28% toward --map-region */
+  --map-p:#2563eb;--map-s:#84a3ec;--map-t:#bccbef;--map-edge:#f4f5f9;
+  --hm-off:#e5e8f0;--hm-void:#edeff5;
+  --grid:#dcdfe9;
+  --rk-f:#98a0b4;--rk-d:#dc2626;--rk-c:#d97706;
+  --rk-b:#2563eb;--rk-a:#7c3aed;--rk-s:#16a34a;--rk-ss:#be185d;
+  --r:10px;--rs:6px;
+}
+
+/* ═══════════════════════════════════════════════════════════
    ARCADE ANIMATIONS
    Scoped to the theme so `dark` stays completely still.
    All of it collapses under prefers-reduced-motion at the bottom.

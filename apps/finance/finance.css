@@ -218,9 +218,10 @@
 .fx-donut svg{width:160px;height:160px}
 .fx-arc{cursor:pointer;transition:stroke-width .12s}
 .fx-arc.hot{stroke-width:25}
-.fx-donut-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 22px;pointer-events:none}
-.fx-donut-total{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.5px}
-.fx-donut-sub{font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--text-3);margin-top:3px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ring: r=58, stroke 20 → the open hole is 96px wide; keep the text inside it */
+.fx-donut-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 34px;pointer-events:none}
+.fx-donut-total{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.5px;max-width:100%;white-space:nowrap}
+.fx-donut-sub{font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--text-3);margin-top:3px;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fx-legend{flex:1;min-width:180px;display:flex;flex-direction:column;gap:1px}
 .fx-leg-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:9px;padding:7px 6px;border-radius:6px;cursor:pointer;transition:background .12s}
 .fx-leg-row:hover{background:var(--bg-hover)}
