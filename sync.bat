@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  Bartleby Software - one-click sync to GitHub
+REM  Bartleby Web - one-click sync to GitHub
 REM  Double-click this file to save all changes and publish.
 REM ============================================================
 cd /d "%~dp0"

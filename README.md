@@ -1,4 +1,4 @@
-# Bartleby Software
+# Bartleby Web
 
 A personal, local-first suite of small web apps. Each "app" is a self-contained
 module; a lightweight shell switches between them from the sidebar.
@@ -58,7 +58,7 @@ animation set — see `assets/css/themes.css` and `assets/js/theme.js`.
 ## Project structure
 
 ```
-Bartleby Software/
+Bartleby Web/
 ├── index.html               # the shell (loads the apps)
 ├── assets/
 │   ├── css/

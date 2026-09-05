@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  Bartleby Software - run locally
+REM  Bartleby Web - run locally
 REM
 REM  Double-click THIS file instead of index.html.
 REM
