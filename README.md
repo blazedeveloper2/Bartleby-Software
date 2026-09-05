@@ -143,3 +143,12 @@ Your site goes live at:
 
 Just double-click **`sync.bat`** whenever you want to save + publish. It commits
 everything and pushes; GitHub rebuilds the site in ~1 minute.
+
+If you'd rather type it, the same thing from a terminal in this folder is:
+
+```
+git add -A; git commit -m "describe what you changed"; git push
+```
+
+The repo is **blazedeveloper2/Bartleby-Software**. It stays Public because
+GitHub Pages on a free account only serves public repos.
